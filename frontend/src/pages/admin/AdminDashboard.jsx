@@ -38,7 +38,7 @@ export default function AdminDashboard() {
       color: 'text-blue-600',
       bg: 'bg-blue-50',
       icon: '✅',
-      link: '/admin/organizaciones',
+      link: '/admin/registros',
       linkLabel: 'Ver detalle',
     },
     {
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
       color: 'text-purple-600',
       bg: 'bg-purple-50',
       icon: '👥',
-      link: '/admin/organizaciones',
+      link: '/admin/voluntarios',
       linkLabel: 'Ver detalle',
     },
   ];

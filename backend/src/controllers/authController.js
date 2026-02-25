@@ -102,4 +102,60 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { register, login, me };
+async function updateProfile(req, res, next) {
+  try {
+    const { email, phone, community, password } = req.body;
+
+    const updateData = {};
+
+    // Validar y actualizar email
+    if (email !== undefined) {
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'Email inválido' });
+      }
+      // Verificar que no exista otro usuario con ese email
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing && existing.id !== req.user.id) {
+        return res.status(400).json({ error: 'Ya existe otra cuenta con ese email' });
+      }
+      updateData.email = email;
+    }
+
+    if (phone !== undefined) {
+      updateData.phone = phone || null;
+    }
+
+    if (community !== undefined) {
+      updateData.community = community || null;
+    }
+
+    // Si viene contraseña nueva, hacer bcrypt hash
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+      updateData.passwordHash = await bcrypt.hash(password, 10);
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        phone: true,
+        community: true,
+        organizationId: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+    });
+
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, me, updateProfile };

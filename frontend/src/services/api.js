@@ -31,6 +31,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
+  updateProfile: (data) => api.put('/auth/profile', data),
 };
 
 // Opportunities API (público)
@@ -69,6 +70,26 @@ export const adminAPI = {
   updateOrgStatus: (id, status) => api.put(`/admin/organizations/${id}/status`, { status }),
   listOpportunities: () => api.get('/admin/opportunities'),
   listSignups: () => api.get('/admin/signups'),
+
+  // Voluntarios
+  listVolunteers: () => api.get('/admin/volunteers'),
+  deleteVolunteer: (id) => api.delete(`/admin/volunteers/${id}`),
+
+  // Signups
+  updateSignupStatus: (id, status) => api.put(`/admin/signups/${id}/status`, { status }),
+
+  // Org panel para superadmin
+  getOrg: (orgId) => api.get(`/admin/orgs/${orgId}`),
+  updateOrg: (orgId, data) => api.put(`/admin/orgs/${orgId}`, data),
+  listOrgOpportunities: (orgId) => api.get(`/admin/orgs/${orgId}/opportunities`),
+  createOrgOpportunity: (orgId, data) => api.post(`/admin/orgs/${orgId}/opportunities`, data),
+  updateOrgOpportunity: (orgId, oppId, data) => api.put(`/admin/orgs/${orgId}/opportunities/${oppId}`, data),
+  updateOrgOpportunityStatus: (orgId, oppId, status) =>
+    api.put(`/admin/orgs/${orgId}/opportunities/${oppId}/status`, { status }),
+  getOrgOpportunityVolunteers: (orgId, oppId) =>
+    api.get(`/admin/orgs/${orgId}/opportunities/${oppId}/volunteers`),
+  markOrgVolunteerAttendance: (orgId, oppId, signupId) =>
+    api.put(`/admin/orgs/${orgId}/opportunities/${oppId}/volunteers/${signupId}`),
 };
 
 export default api;

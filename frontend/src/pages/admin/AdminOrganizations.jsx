@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 
+
 function OrgStatusBadge({ status }) {
   const styles = {
     Pending: 'bg-yellow-100 text-yellow-700',
@@ -143,6 +144,12 @@ export default function AdminOrganizations() {
                     <td className="px-6 py-4 text-sm text-gray-500">{formatDate(org.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
+                        <Link
+                          to={`/admin/organizaciones/${org.id}/panel`}
+                          className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-medium hover:bg-indigo-100"
+                        >
+                          🏢 Panel
+                        </Link>
                         {org.status !== 'Approved' && (
                           <button
                             onClick={() => handleStatusChange(org.id, 'Approved')}

@@ -62,6 +62,14 @@ export default function Navbar() {
                 )}
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-500">{user.email}</span>
+                  <NavLink
+                    to="/perfil/configuracion"
+                    className={({ isActive }) =>
+                      `text-sm font-medium transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-600 hover:text-indigo-600'}`
+                    }
+                  >
+                    ⚙ Configuración
+                  </NavLink>
                   <button
                     onClick={handleLogout}
                     className="text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
@@ -125,6 +133,13 @@ export default function Navbar() {
                   </Link>
                 )}
                 <div className="px-4 py-2 text-xs text-gray-500">{user.email}</div>
+                <Link
+                  to="/perfil/configuracion"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  ⚙ Configuración
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
