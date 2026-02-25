@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 
@@ -11,7 +11,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  if (user) navigate('/mi-cuenta', { replace: true });
+  if (user) return <Navigate to="/mi-cuenta" replace />;
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

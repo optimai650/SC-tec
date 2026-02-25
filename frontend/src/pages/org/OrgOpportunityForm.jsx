@@ -69,11 +69,12 @@ export default function OrgOpportunityForm() {
     }
 
     setLoading(true);
+    const payload = { ...form, totalSlots: parseInt(form.totalSlots, 10) };
     try {
       if (isEditing) {
-        await organizationsAPI.updateOpportunity(id, form);
+        await organizationsAPI.updateOpportunity(id, payload);
       } else {
-        await organizationsAPI.createOpportunity(form);
+        await organizationsAPI.createOpportunity(payload);
       }
       navigate('/org/oportunidades');
     } catch (err) {

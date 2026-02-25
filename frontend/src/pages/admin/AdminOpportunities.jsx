@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../services/api';
+import { adminAPI } from '../../services/api';
 
 const STATUS_LABELS = {
   Draft: { label: 'Borrador', color: 'bg-gray-100 text-gray-700' },
@@ -20,7 +20,7 @@ export default function AdminOpportunities() {
 
   const fetchOpportunities = async () => {
     try {
-      const res = await api.get('/admin/opportunities');
+      const res = await adminAPI.listOpportunities();
       setOpportunities(res.data);
     } catch (err) {
       setError('Error al cargar oportunidades.');

@@ -40,10 +40,7 @@ export default function OpportunityDetail() {
 
   useEffect(() => {
     if (user && user.role === 'volunteer') {
-      const { signupsAPI: api } = require('../../services/api');
-      import('../../services/api').then(({ signupsAPI }) => {
-        signupsAPI.getMine().then((res) => setUserSignups(res.data)).catch(() => {});
-      });
+      signupsAPI.getMine().then((res) => setUserSignups(res.data)).catch(() => {});
     }
   }, [user]);
 

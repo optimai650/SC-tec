@@ -83,6 +83,14 @@ async function cancelSignup(req, res, next) {
       return res.status(403).json({ error: 'No tienes permisos para cancelar este registro' });
     }
 
+    if (signup.status === 'Cancelado') {
+      return res.status(400).json({ error: 'Este registro ya está cancelado' });
+    }
+
+    if (signup.status === 'Completado') {
+      return res.status(400).json({ error: 'No puedes cancelar un registro ya completado' });
+    }
+
     if (new Date(signup.opportunity.startDate) <= new Date()) {
       return res.status(400).json({ error: 'No puedes cancelar un registro de una oportunidad que ya comenzó' });
     }

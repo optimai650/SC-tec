@@ -110,16 +110,32 @@ async function updateOpportunity(req, res, next) {
       return res.status(404).json({ error: 'Oportunidad no encontrada' });
     }
 
+    const updateData = {
+      title,
+      description,
+      location,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    };
+
+    if (totalSlots !== undefined) {
+      const newTotal = parseInt(totalSlots);
+      // Count active signups to recalculate remainingSlots correctly
+      const activeSignups = await prisma.signup.count({
+        where: { opportunityId: id, status: { not: 'Cancelado' } },
+      });
+      if (newTotal < activeSignups) {
+        return res.status(400).json({
+          error: `No se puede reducir los cupos a ${newTotal} porque ya hay ${activeSignups} voluntarios registrados`,
+        });
+      }
+      updateData.totalSlots = newTotal;
+      updateData.remainingSlots = newTotal - activeSignups;
+    }
+
     const opportunity = await prisma.opportunity.update({
       where: { id },
-      data: {
-        title,
-        description,
-        location,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        totalSlots: totalSlots ? parseInt(totalSlots) : undefined,
-      },
+      data: updateData,
     });
 
     res.json(opportunity);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 
@@ -13,9 +13,9 @@ export default function Login() {
 
   // If already logged in, redirect
   if (user) {
-    if (user.role === 'superadmin') navigate('/admin', { replace: true });
-    else if (user.role === 'org_admin') navigate('/org', { replace: true });
-    else navigate('/mi-cuenta', { replace: true });
+    if (user.role === 'superadmin') return <Navigate to="/admin" replace />;
+    if (user.role === 'org_admin') return <Navigate to="/org" replace />;
+    return <Navigate to="/mi-cuenta" replace />;
   }
 
   const from = location.state?.from || null;
