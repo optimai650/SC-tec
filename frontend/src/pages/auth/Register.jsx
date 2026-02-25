@@ -127,54 +127,6 @@ export default function Register() {
                 placeholder="ej. 55 1234 5678"
                 className="input"
                 required
-              />
-            </div>
-
-            <div>
-              <label className="label" htmlFor="community">Comunidad</label>
-              <select
-                id="community"
-                name="community"
-                value={form.community}
-                onChange={handleChange}
-                className="input"
-                required
-              >
-                <option value="">Selecciona tu comunidad</option>
-                <option value="Maguen David">Maguen David</option>
-                <option value="Monte Sinai">Monte Sinai</option>
-                <option value="Bet-El">Bet-El</option>
-                <option value="Otros">Otros</option>
-              </select>
-            </div>
-
-            {form.community === 'Otros' && (
-              <div>
-                <label className="label" htmlFor="customCommunity">Especifica tu comunidad</label>
-                <input
-                  id="customCommunity"
-                  type="text"
-                  name="customCommunity"
-                  value={form.customCommunity}
-                  onChange={handleChange}
-                  placeholder="Nombre de tu comunidad"
-                  className="input"
-                  required
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="label" htmlFor="phone">Número de teléfono</label>
-              <input
-                id="phone"
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="ej. 55 1234 5678"
-                className="input"
-                required
                 autoComplete="tel"
               />
             </div>
