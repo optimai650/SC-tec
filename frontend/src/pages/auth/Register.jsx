@@ -6,7 +6,7 @@ import { authAPI } from '../../services/api';
 export default function Register() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', phone: '', community: '', customCommunity: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -34,7 +34,8 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const res = await authAPI.register({ email: form.email, password: form.password });
+      const communityValue = form.community === 'Otros' ? form.customCommunity : form.community;
+      const res = await authAPI.register({ email: form.email, password: form.password, phone: form.phone, community: communityValue });
       login(res.data.token, res.data.user);
       navigate('/mi-cuenta', { replace: true });
     } catch (err) {
@@ -114,6 +115,103 @@ export default function Register() {
                 autoComplete="new-password"
               />
             </div>
+
+            <div>
+              <label className="label" htmlFor="phone">Número de teléfono</label>
+              <input
+                id="phone"
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="ej. 55 1234 5678"
+                className="input"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="label" htmlFor="community">Comunidad</label>
+              <select
+                id="community"
+                name="community"
+                value={form.community}
+                onChange={handleChange}
+                className="input"
+                required
+              >
+                <option value="">Selecciona tu comunidad</option>
+                <option value="Maguen David">Maguen David</option>
+                <option value="Monte Sinai">Monte Sinai</option>
+                <option value="Bet-El">Bet-El</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+
+            {form.community === 'Otros' && (
+              <div>
+                <label className="label" htmlFor="customCommunity">Especifica tu comunidad</label>
+                <input
+                  id="customCommunity"
+                  type="text"
+                  name="customCommunity"
+                  value={form.customCommunity}
+                  onChange={handleChange}
+                  placeholder="Nombre de tu comunidad"
+                  className="input"
+                  required
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="label" htmlFor="phone">Número de teléfono</label>
+              <input
+                id="phone"
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="ej. 55 1234 5678"
+                className="input"
+                required
+                autoComplete="tel"
+              />
+            </div>
+
+            <div>
+              <label className="label" htmlFor="community">Comunidad</label>
+              <select
+                id="community"
+                name="community"
+                value={form.community}
+                onChange={handleChange}
+                className="input"
+                required
+              >
+                <option value="">Selecciona tu comunidad</option>
+                <option value="Maguen David">Maguen David</option>
+                <option value="Monte Sinai">Monte Sinai</option>
+                <option value="Bet-El">Bet-El</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+
+            {form.community === 'Otros' && (
+              <div>
+                <label className="label" htmlFor="customCommunity">Especifica tu comunidad</label>
+                <input
+                  id="customCommunity"
+                  type="text"
+                  name="customCommunity"
+                  value={form.customCommunity}
+                  onChange={handleChange}
+                  placeholder="Nombre de tu comunidad"
+                  className="input"
+                  required={form.community === 'Otros'}
+                />
+              </div>
+            )}
 
             <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
               Al registrarte, aceptas nuestros términos de uso y política de privacidad. Tu cuenta será verificada automáticamente.

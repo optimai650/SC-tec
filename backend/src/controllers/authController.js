@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cambia-esto-en-produccion';
 
 async function register(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, phone, community } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
@@ -29,6 +29,8 @@ async function register(req, res, next) {
         passwordHash,
         role: 'volunteer',
         emailVerified: true,
+        phone: phone || null,
+        community: community || null,
       },
     });
 

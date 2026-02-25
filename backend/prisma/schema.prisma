@@ -13,6 +13,8 @@ model User {
   passwordHash   String
   role           String        // "superadmin" | "org_admin" | "volunteer"
   emailVerified  Boolean       @default(false)
+  phone          String?
+  community      String?
   createdAt      DateTime      @default(now())
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?

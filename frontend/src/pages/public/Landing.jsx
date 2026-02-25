@@ -18,8 +18,16 @@ export default function Landing() {
       <section className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           <div className="max-w-3xl">
+            <div className="mb-6">
+              <img
+                src="/logo.png"
+                alt="Voluntariado Maguen David"
+                className="h-16 w-auto"
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              Tu tiempo puede{' '}
+              Voluntariado Maguen David —{' '}
               <span className="text-yellow-300">cambiar vidas</span>
             </h1>
             <p className="text-xl md:text-2xl text-indigo-100 mb-10 leading-relaxed">
