@@ -47,7 +47,7 @@ export default function ProfileSettings() {
     // Validar contraseñas si se ingresó una nueva
     if (form.password) {
       if (form.password.length < 6) {
-        setMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' });
+        setMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
         return;
       }
       if (form.password !== form.confirmPassword) {

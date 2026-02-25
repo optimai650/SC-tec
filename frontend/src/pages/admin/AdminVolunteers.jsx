@@ -121,8 +121,8 @@ export default function AdminVolunteers() {
                         <span className="text-sm font-medium text-gray-900">{vol.email}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{vol.phone || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{vol.community || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{vol.phone || <span className="text-gray-300">-</span>}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{vol.community || <span className="text-gray-300">-</span>}</td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-semibold text-indigo-600">{vol._count?.signups || 0}</span>
                     </td>
