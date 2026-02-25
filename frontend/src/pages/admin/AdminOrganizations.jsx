@@ -23,6 +23,14 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+const STATUS_LABELS = {
+  '': 'Todas',
+  Pending: 'Pendientes',
+  Approved: 'Aprobadas',
+  Rejected: 'Rechazadas',
+  Disabled: 'Deshabilitadas',
+};
+
 export default function AdminOrganizations() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +48,7 @@ export default function AdminOrganizations() {
       const res = await adminAPI.listOrganizations();
       setOrganizations(res.data);
     } catch {
+      setMessage({ type: 'error', text: 'Error al cargar las organizaciones.' });
     } finally {
       setLoading(false);
     }
@@ -93,7 +102,7 @@ export default function AdminOrganizations() {
                 statusFilter === s ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {s === '' ? 'Todas' : s === 'Pending' ? 'Pendientes' : s === 'Approved' ? 'Aprobadas' : s === 'Rejected' ? 'Rechazadas' : 'Deshabilitadas'}
+              {STATUS_LABELS[s]}
             </button>
           ))}
         </div>

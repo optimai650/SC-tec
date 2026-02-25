@@ -59,7 +59,7 @@ async function createOrganization(req, res, next) {
       return { org, admin };
     });
 
-    console.log(`[EMAIL] Cuenta creada para ${adminEmail} como admin de "${name}". Contraseña temporal: ${adminPassword}`);
+    console.log(`[EMAIL] Cuenta creada para ${adminEmail} como admin de "${name}".`);
 
     res.status(201).json({
       organization: result.org,

@@ -12,6 +12,7 @@ export default function AdminVolunteers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
@@ -20,10 +21,12 @@ export default function AdminVolunteers() {
 
   async function load() {
     setLoading(true);
+    setError('');
     try {
       const res = await adminAPI.listVolunteers();
       setVolunteers(res.data);
     } catch {
+      setError('Error al cargar los voluntarios.');
     } finally {
       setLoading(false);
     }
@@ -57,6 +60,12 @@ export default function AdminVolunteers() {
         <h1 className="text-3xl font-bold text-gray-900 mb-1">Voluntarios</h1>
         <p className="text-gray-500">Gestiona todos los voluntarios registrados en la plataforma.</p>
       </div>
+
+      {error && (
+        <div className="mb-6 bg-red-50 text-red-700 border border-red-200 rounded-lg p-4 text-sm">
+          {error}
+        </div>
+      )}
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${

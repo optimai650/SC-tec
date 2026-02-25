@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 
 // ---- Helpers ----
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('es-MX', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
@@ -220,21 +220,22 @@ function TabOpportunities({ orgId, onOppsLoaded }) {
   const [editingOpp, setEditingOpp] = useState(null); // null = closed, 'new' = creating, opp obj = editing
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  useEffect(() => {
-    loadOpps();
-  }, [orgId]);
-
-  async function loadOpps() {
+  const loadOpps = useCallback(async () => {
     setLoading(true);
     try {
       const res = await adminAPI.listOrgOpportunities(orgId);
       setOpportunities(res.data);
       if (onOppsLoaded) onOppsLoaded(res.data);
     } catch {
+      setMessage({ type: 'error', text: 'Error al cargar las oportunidades.' });
     } finally {
       setLoading(false);
     }
-  }
+  }, [orgId, onOppsLoaded]);
+
+  useEffect(() => {
+    loadOpps();
+  }, [loadOpps]);
 
   async function handleStatusChange(oppId, newStatus) {
     setUpdatingStatus(oppId);
@@ -377,23 +378,23 @@ function TabVolunteers({ orgId, opportunities }) {
   const [marking, setMarking] = useState(null);
 
   useEffect(() => {
+    async function fetchVolunteers() {
+      setLoading(true);
+      try {
+        const res = await adminAPI.getOrgOpportunityVolunteers(orgId, selectedOppId);
+        setSignups(res.data);
+      } catch (err) {
+        setMessage({ type: 'error', text: 'Error al cargar voluntarios.' });
+      } finally {
+        setLoading(false);
+      }
+    }
     if (selectedOppId) {
-      loadVolunteers();
+      fetchVolunteers();
     } else {
       setSignups([]);
     }
-  }, [selectedOppId]);
-
-  async function loadVolunteers() {
-    setLoading(true);
-    try {
-      const res = await adminAPI.getOrgOpportunityVolunteers(orgId, selectedOppId);
-      setSignups(res.data);
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [selectedOppId, orgId]);
 
   async function handleMarkAttendance(signupId) {
     setMarking(signupId);
@@ -423,7 +424,7 @@ function TabVolunteers({ orgId, opportunities }) {
           onChange={(e) => setSelectedOppId(e.target.value)}
           className="input"
         >
-          <option value="">— Selecciona una oportunidad —</option>
+          <option value="">Selecciona una oportunidad</option>
           {opportunities.map((opp) => (
             <option key={opp.id} value={opp.id}>
               {opp.title} ({new Date(opp.startDate).toLocaleDateString('es-MX')})
@@ -501,7 +502,7 @@ function TabVolunteers({ orgId, opportunities }) {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {signup.volunteer?.phone || <span className="text-gray-300">—</span>}
+                          {signup.volunteer?.phone || <span className="text-gray-300">-</span>}
                         </td>
                         <td className="px-6 py-4">
                           <SignupStatusBadge status={signup.status} />
@@ -516,7 +517,7 @@ function TabVolunteers({ orgId, opportunities }) {
                               {marking === signup.id ? 'Marcando...' : '✓ Marcar asistencia'}
                             </button>
                           ) : (
-                            <span className="text-xs text-gray-400">—</span>
+                            <span className="text-xs text-gray-400">-</span>
                           )}
                         </td>
                       </tr>
@@ -542,27 +543,28 @@ export default function AdminOrgPanel() {
   const [activeTab, setActiveTab] = useState('info');
 
   useEffect(() => {
-    loadOrg();
-    loadOpps();
-  }, [orgId]);
-
-  async function loadOrg() {
-    setLoading(true);
-    try {
-      const res = await adminAPI.getOrg(orgId);
-      setOrg(res.data);
-    } catch {
-    } finally {
-      setLoading(false);
+    async function fetchOrg() {
+      setLoading(true);
+      try {
+        const res = await adminAPI.getOrg(orgId);
+        setOrg(res.data);
+      } catch (err) {
+        console.error('Error cargando org:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
-
-  async function loadOpps() {
-    try {
-      const res = await adminAPI.listOrgOpportunities(orgId);
-      setOpportunities(res.data);
-    } catch {}
-  }
+    async function fetchOpps() {
+      try {
+        const res = await adminAPI.listOrgOpportunities(orgId);
+        setOpportunities(res.data);
+      } catch (err) {
+        console.error('Error cargando oportunidades:', err);
+      }
+    }
+    fetchOrg();
+    fetchOpps();
+  }, [orgId]);
 
   const tabs = [
     { id: 'info', label: '🏢 Info de la org' },

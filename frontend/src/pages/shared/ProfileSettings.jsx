@@ -17,6 +17,7 @@ export default function ProfileSettings() {
   // Cargar datos actuales del usuario
   useEffect(() => {
     if (user) {
+      setLoading(true);
       authAPI.me().then((res) => {
         const u = res.data;
         setForm((prev) => ({
@@ -25,7 +26,11 @@ export default function ProfileSettings() {
           phone: u.phone || '',
           community: u.community || '',
         }));
-      }).catch(() => {});
+        setLoading(false);
+      }).catch(() => {
+        setMessage({ type: 'error', text: 'No se pudo cargar tu perfil. Recarga la pagina.' });
+        setLoading(false);
+      });
     }
   }, [user]);
 

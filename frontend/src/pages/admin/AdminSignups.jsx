@@ -11,7 +11,7 @@ function StatusBadge({ status }) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('es-MX', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
@@ -23,6 +23,7 @@ export default function AdminSignups() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState('');
   const [updating, setUpdating] = useState(null);
 
   useEffect(() => {
@@ -31,10 +32,12 @@ export default function AdminSignups() {
 
   async function load() {
     setLoading(true);
+    setError('');
     try {
       const res = await adminAPI.listSignups();
       setSignups(res.data);
     } catch {
+      setError('Error al cargar los registros.');
     } finally {
       setLoading(false);
     }
@@ -71,6 +74,12 @@ export default function AdminSignups() {
         <p className="text-gray-500">Gestiona todos los registros de voluntarios en oportunidades.</p>
         <p className="text-gray-500 text-sm">Filtra por estado para ver solo los registros activos.</p>
       </div>
+
+      {error && (
+        <div className="mb-6 bg-red-50 text-red-700 border border-red-200 rounded-lg p-4 text-sm">
+          {error}
+        </div>
+      )}
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${

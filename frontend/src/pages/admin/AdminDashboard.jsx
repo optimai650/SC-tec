@@ -5,11 +5,12 @@ import { adminAPI } from '../../services/api';
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     adminAPI.getStats()
       .then((res) => setStats(res.data))
-      .catch(() => {})
+      .catch(() => setError('No se pudieron cargar las estadisticas.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -59,6 +60,12 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de administración</h1>
         <p className="text-gray-500">Bienvenido al panel de control de Voluntariado Maguen David.</p>
       </div>
+
+      {error && (
+        <div className="mb-6 bg-red-50 text-red-700 border border-red-200 rounded-lg p-4 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       {loading ? (
