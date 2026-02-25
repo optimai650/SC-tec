@@ -377,24 +377,27 @@ function TabVolunteers({ orgId, opportunities }) {
   const [message, setMessage] = useState(null);
   const [marking, setMarking] = useState(null);
 
-  useEffect(() => {
-    async function fetchVolunteers() {
-      setLoading(true);
-      try {
-        const res = await adminAPI.getOrgOpportunityVolunteers(orgId, selectedOppId);
-        setSignups(res.data);
-      } catch (err) {
-        setMessage({ type: 'error', text: 'Error al cargar voluntarios.' });
-      } finally {
-        setLoading(false);
-      }
+  const loadVolunteers = useCallback(async () => {
+    if (!selectedOppId) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      const res = await adminAPI.getOrgOpportunityVolunteers(orgId, selectedOppId);
+      setSignups(res.data);
+    } catch {
+      setMessage({ type: 'error', text: 'Error al cargar voluntarios.' });
+    } finally {
+      setLoading(false);
     }
+  }, [orgId, selectedOppId]);
+
+  useEffect(() => {
     if (selectedOppId) {
-      fetchVolunteers();
+      loadVolunteers();
     } else {
       setSignups([]);
     }
-  }, [selectedOppId, orgId]);
+  }, [selectedOppId, loadVolunteers]);
 
   async function handleMarkAttendance(signupId) {
     setMarking(signupId);
@@ -541,30 +544,35 @@ export default function AdminOrgPanel() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
+  const [error, setError] = useState('');
+
+  const loadOrg = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await adminAPI.getOrg(orgId);
+      setOrg(res.data);
+    } catch {
+      setError('No se pudo cargar la organizacion.');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId]);
+
+  const loadOpps = useCallback(async () => {
+    try {
+      const res = await adminAPI.listOrgOpportunities(orgId);
+      setOpportunities(res.data);
+    } catch {
+      // Oportunidades son opcionales, org puede mostrarse igual
+      setOpportunities([]);
+    }
+  }, [orgId]);
 
   useEffect(() => {
-    async function fetchOrg() {
-      setLoading(true);
-      try {
-        const res = await adminAPI.getOrg(orgId);
-        setOrg(res.data);
-      } catch (err) {
-        console.error('Error cargando org:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    async function fetchOpps() {
-      try {
-        const res = await adminAPI.listOrgOpportunities(orgId);
-        setOpportunities(res.data);
-      } catch (err) {
-        console.error('Error cargando oportunidades:', err);
-      }
-    }
-    fetchOrg();
-    fetchOpps();
-  }, [orgId]);
+    loadOrg();
+    loadOpps();
+  }, [loadOrg, loadOpps]);
 
   const tabs = [
     { id: 'info', label: '🏢 Info de la org' },
@@ -580,11 +588,13 @@ export default function AdminOrgPanel() {
     );
   }
 
-  if (!org) {
+  if (error || !org) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <div className="text-4xl mb-4">❌</div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Organización no encontrada</h2>
+        <div className="text-4xl mb-4">{error ? '⚠️' : '❌'}</div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          {error || 'Organizacion no encontrada'}
+        </h2>
         <Link to="/admin/organizaciones" className="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
           ← Volver a organizaciones
         </Link>
