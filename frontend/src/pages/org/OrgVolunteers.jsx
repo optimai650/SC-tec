@@ -144,7 +144,7 @@ export default function OrgVolunteers() {
                           {marking === signup.id ? 'Marcando...' : '✓ Marcar completado'}
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
                   </tr>

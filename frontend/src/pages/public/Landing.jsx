@@ -27,7 +27,7 @@ export default function Landing() {
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              Voluntariado Maguen David —{' '}
+              Voluntariado Maguen David:{' '}
               <span className="text-yellow-300">cambiar vidas</span>
             </h1>
             <p className="text-xl md:text-2xl text-indigo-100 mb-10 leading-relaxed">

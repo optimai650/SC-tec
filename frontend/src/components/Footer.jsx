@@ -8,10 +8,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">V</span>
-              </div>
-              <span className="text-lg font-bold text-indigo-600">Voluntarios</span>
+              <img
+                src="/logo.png"
+                alt="Voluntariado Maguen David"
+                className="h-10 w-auto"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <span className="text-lg font-bold text-indigo-600">Voluntariado Maguen David</span>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed">
               Conectamos personas con ganas de ayudar con organizaciones que necesitan apoyo. Juntos hacemos la diferencia.
@@ -53,7 +56,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-8 border-t border-gray-100">
           <p className="text-center text-sm text-gray-400">
-            © {new Date().getFullYear()} Voluntarios App. Todos los derechos reservados.
+            © {new Date().getFullYear()} Voluntariado Maguen David. Todos los derechos reservados.
           </p>
         </div>
       </div>

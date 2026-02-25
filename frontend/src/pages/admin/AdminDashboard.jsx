@@ -16,7 +16,7 @@ export default function AdminDashboard() {
   const cards = [
     {
       label: 'Organizaciones',
-      value: stats?.totalOrgs ?? '—',
+      value: stats?.totalOrgs ?? '-',
       color: 'text-indigo-600',
       bg: 'bg-indigo-50',
       icon: '🏢',
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Oportunidades',
-      value: stats?.totalOpportunities ?? '—',
+      value: stats?.totalOpportunities ?? '-',
       color: 'text-green-600',
       bg: 'bg-green-50',
       icon: '📋',
@@ -34,7 +34,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Registros activos',
-      value: stats?.totalSignups ?? '—',
+      value: stats?.totalSignups ?? '-',
       color: 'text-blue-600',
       bg: 'bg-blue-50',
       icon: '✅',
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Voluntarios',
-      value: stats?.totalUsers ?? '—',
+      value: stats?.totalUsers ?? '-',
       color: 'text-purple-600',
       bg: 'bg-purple-50',
       icon: '👥',

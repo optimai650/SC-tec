@@ -82,7 +82,7 @@ export default function AdminOpportunities() {
                 return (
                   <tr key={op.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{op.title}</td>
-                    <td className="px-6 py-4 text-gray-600">{op.organization?.name || '—'}</td>
+                    <td className="px-6 py-4 text-gray-600">{op.organization?.name || '-'}</td>
                     <td className="px-6 py-4 text-gray-600">{op.location}</td>
                     <td className="px-6 py-4 text-gray-600">
                       {new Date(op.startDate).toLocaleDateString('es-MX')}
