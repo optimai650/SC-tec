@@ -57,7 +57,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de administración</h1>
-        <p className="text-gray-500">Bienvenido al panel de control de la plataforma.</p>
+        <p className="text-gray-500">Bienvenido al panel de control de Voluntariado Maguen David.</p>
       </div>
 
       {/* Stats */}

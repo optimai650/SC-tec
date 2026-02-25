@@ -50,12 +50,7 @@ export default function Register() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img
-            src="/logo.png"
-            alt="Voluntariado Maguen David"
-            className="h-16 w-auto mx-auto mb-4"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
+          <img src="/logo.png" alt="Voluntariado Maguen David" className="h-16 w-auto mx-auto mb-4" onError={(e) => { e.target.style.display='none' }} />
           <h1 className="text-3xl font-bold text-gray-900">Crear cuenta</h1>
           <p className="text-gray-500 mt-2">Únete como voluntario y empieza a ayudar</p>
         </div>
@@ -74,6 +69,7 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* 1. Email */}
             <div>
               <label className="label" htmlFor="email">Email</label>
               <input
@@ -89,6 +85,7 @@ export default function Register() {
               />
             </div>
 
+            {/* 2. Contraseña */}
             <div>
               <label className="label" htmlFor="password">Contraseña</label>
               <input
@@ -104,6 +101,7 @@ export default function Register() {
               />
             </div>
 
+            {/* 3. Confirmar contraseña */}
             <div>
               <label className="label" htmlFor="confirmPassword">Confirmar contraseña</label>
               <input
@@ -119,6 +117,7 @@ export default function Register() {
               />
             </div>
 
+            {/* 4. Número de teléfono */}
             <div>
               <label className="label" htmlFor="phone">Número de teléfono</label>
               <input
@@ -134,6 +133,7 @@ export default function Register() {
               />
             </div>
 
+            {/* 5. Comunidad */}
             <div>
               <label className="label" htmlFor="community">Comunidad</label>
               <select
@@ -152,6 +152,7 @@ export default function Register() {
               </select>
             </div>
 
+            {/* 6. Especifica tu comunidad (condicional) */}
             {form.community === 'Otros' && (
               <div>
                 <label className="label" htmlFor="customCommunity">Especifica tu comunidad</label>
@@ -168,10 +169,12 @@ export default function Register() {
               </div>
             )}
 
+            {/* 7. Texto legal */}
             <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
               Al registrarte, aceptas nuestros términos de uso y política de privacidad. Tu cuenta será verificada automáticamente.
             </p>
 
+            {/* 8. Botón */}
             <button
               type="submit"
               disabled={loading}
