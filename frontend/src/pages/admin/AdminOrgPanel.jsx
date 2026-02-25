@@ -213,7 +213,7 @@ function OppForm({ orgId, opp, onSaved, onCancel }) {
 
 // ---- Tab: Opportunities ----
 
-function TabOpportunities({ orgId }) {
+function TabOpportunities({ orgId, onOppsLoaded }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -229,6 +229,7 @@ function TabOpportunities({ orgId }) {
     try {
       const res = await adminAPI.listOrgOpportunities(orgId);
       setOpportunities(res.data);
+      if (onOppsLoaded) onOppsLoaded(res.data);
     } catch {
     } finally {
       setLoading(false);
