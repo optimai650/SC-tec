@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const syncOpportunityStatus = require('../utils/syncOpportunityStatus');
 
 async function listPublished(req, res, next) {
   try {
@@ -23,7 +24,8 @@ async function listPublished(req, res, next) {
       orderBy: { startDate: 'asc' },
     });
 
-    res.json(opportunities);
+    const synced = await Promise.all(opportunities.map(o => syncOpportunityStatus(o)));
+    res.json(synced);
   } catch (err) {
     next(err);
   }

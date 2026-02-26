@@ -6,9 +6,13 @@ export default function Opportunities() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ location: '', startDate: '' });
+  const [locations, setLocations] = useState([]);
 
   useEffect(() => {
     fetchOpportunities();
+    opportunitiesAPI.listLocations()
+      .then(res => setLocations(res.data))
+      .catch(() => setLocations([]));
   }, []);
 
   async function fetchOpportunities(params = {}) {
@@ -58,14 +62,16 @@ export default function Opportunities() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="label">Ubicación</label>
-            <input
-              type="text"
-              name="location"
-              value={filters.location}
-              onChange={handleFilterChange}
-              placeholder="Ej: Ciudad de México"
+            <select
+              value={filters.location || ''}
+              onChange={e => setFilters(prev => ({ ...prev, location: e.target.value }))}
               className="input"
-            />
+            >
+              <option value="">Todas las ubicaciones</option>
+              {locations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">Fecha desde</label>

@@ -8,6 +8,7 @@ export default function AdminOrgForm() {
     name: '',
     description: '',
     contactEmail: '',
+    logo: '',
     adminEmail: '',
     adminPassword: '',
   });
@@ -17,6 +18,18 @@ export default function AdminOrgForm() {
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setError('');
+  }
+
+  function handleLogoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      setError('El logo no debe superar 500KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setForm(prev => ({ ...prev, logo: ev.target.result }));
+    reader.readAsDataURL(file);
   }
 
   async function handleSubmit(e) {
@@ -113,6 +126,20 @@ export default function AdminOrgForm() {
                   className="input"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="label" htmlFor="logo">Logo</label>
+                {form.logo && (
+                  <img src={form.logo} alt="Logo" className="w-16 h-16 rounded-xl object-cover mb-3" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                <p className="text-xs text-gray-400 mt-1">Maximo 500KB. Se guardara como imagen.</p>
               </div>
             </div>
           </div>
