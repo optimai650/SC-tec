@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 
+
 function OrgStatusBadge({ status }) {
   const styles = {
     Pending: 'bg-yellow-100 text-yellow-700',
@@ -22,6 +23,14 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+const STATUS_LABELS = {
+  '': 'Todas',
+  Pending: 'Pendientes',
+  Approved: 'Aprobadas',
+  Rejected: 'Rechazadas',
+  Disabled: 'Deshabilitadas',
+};
+
 export default function AdminOrganizations() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +48,7 @@ export default function AdminOrganizations() {
       const res = await adminAPI.listOrganizations();
       setOrganizations(res.data);
     } catch {
+      setMessage({ type: 'error', text: 'Error al cargar las organizaciones.' });
     } finally {
       setLoading(false);
     }
@@ -92,7 +102,7 @@ export default function AdminOrganizations() {
                 statusFilter === s ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {s === '' ? 'Todas' : s === 'Pending' ? 'Pendientes' : s === 'Approved' ? 'Aprobadas' : s === 'Rejected' ? 'Rechazadas' : 'Deshabilitadas'}
+              {STATUS_LABELS[s]}
             </button>
           ))}
         </div>
@@ -143,6 +153,12 @@ export default function AdminOrganizations() {
                     <td className="px-6 py-4 text-sm text-gray-500">{formatDate(org.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
+                        <Link
+                          to={`/admin/organizaciones/${org.id}/panel`}
+                          className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-medium hover:bg-indigo-100"
+                        >
+                          🏢 Panel
+                        </Link>
                         {org.status !== 'Approved' && (
                           <button
                             onClick={() => handleStatusChange(org.id, 'Approved')}

@@ -30,6 +30,12 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminOrganizations from './pages/admin/AdminOrganizations';
 import AdminOrgForm from './pages/admin/AdminOrgForm';
 import AdminOpportunities from './pages/admin/AdminOpportunities';
+import AdminVolunteers from './pages/admin/AdminVolunteers';
+import AdminSignups from './pages/admin/AdminSignups';
+import AdminOrgPanel from './pages/admin/AdminOrgPanel';
+
+// Shared Pages
+import ProfileSettings from './pages/shared/ProfileSettings';
 
 function Layout({ children }) {
   return (
@@ -110,6 +116,28 @@ export default function App() {
           <Route path="/admin/oportunidades" element={
             <ProtectedRoute allowedRoles={['superadmin']}>
               <Layout><AdminOpportunities /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/voluntarios" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <Layout><AdminVolunteers /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/registros" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <Layout><AdminSignups /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/organizaciones/:orgId/panel" element={
+            <ProtectedRoute allowedRoles={['superadmin']}>
+              <Layout><AdminOrgPanel /></Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Profile (any authenticated role) */}
+          <Route path="/perfil/configuracion" element={
+            <ProtectedRoute allowedRoles={['superadmin', 'org_admin', 'volunteer']}>
+              <Layout><ProfileSettings /></Layout>
             </ProtectedRoute>
           } />
 
