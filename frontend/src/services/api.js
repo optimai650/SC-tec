@@ -38,6 +38,7 @@ export const authAPI = {
 export const opportunitiesAPI = {
   list: (params) => api.get('/opportunities', { params }),
   getById: (id) => api.get(`/opportunities/${id}`),
+  listLocations: () => api.get('/opportunities/locations'),
 };
 
 // Signups API (voluntarios)
@@ -60,6 +61,8 @@ export const organizationsAPI = {
     api.get(`/organizations/mine/opportunities/${id}/volunteers`),
   markAttendance: (opportunityId, signupId) =>
     api.put(`/organizations/mine/opportunities/${opportunityId}/volunteers/${signupId}`),
+  updateVolunteerStatus: (oppId, signupId, status) =>
+    api.put(`/organizations/mine/opportunities/${oppId}/volunteers/${signupId}/status`, { status }),
 };
 
 // Admin API (superadmin)
@@ -90,6 +93,8 @@ export const adminAPI = {
     api.get(`/admin/orgs/${orgId}/opportunities/${oppId}/volunteers`),
   markOrgVolunteerAttendance: (orgId, oppId, signupId) =>
     api.put(`/admin/orgs/${orgId}/opportunities/${oppId}/volunteers/${signupId}`),
+  updateOrgVolunteerStatus: (orgId, oppId, signupId, status) =>
+    api.put(`/admin/orgs/${orgId}/opportunities/${oppId}/volunteers/${signupId}/status`, { status }),
 };
 
 export default api;

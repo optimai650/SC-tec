@@ -51,4 +51,19 @@ async function getById(req, res, next) {
   }
 }
 
-module.exports = { listPublished, getById };
+async function listLocations(req, res, next) {
+  try {
+    const opportunities = await prisma.opportunity.findMany({
+      where: { status: 'Published' },
+      select: { location: true },
+      distinct: ['location'],
+      orderBy: { location: 'asc' },
+    });
+    const locations = opportunities.map((o) => o.location);
+    res.json(locations);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listPublished, getById, listLocations };

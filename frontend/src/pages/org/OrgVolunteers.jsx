@@ -15,7 +15,8 @@ function StatusBadge({ status }) {
     Completado: 'bg-green-100 text-green-700',
     Cancelado: 'bg-gray-100 text-gray-500',
   };
-  return <span className={`badge ${styles[status] || ''}`}>{status}</span>;
+  const label = status === 'Completado' ? 'Asistio' : status;
+  return <span className={`badge ${styles[status] || ''}`}>{label}</span>;
 }
 
 export default function OrgVolunteers() {
@@ -23,6 +24,7 @@ export default function OrgVolunteers() {
   const [signups, setSignups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(null);
+  const [reverting, setReverting] = useState(null);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
@@ -34,7 +36,8 @@ export default function OrgVolunteers() {
     try {
       const res = await organizationsAPI.getOpportunityVolunteers(id);
       setSignups(res.data);
-    } catch {
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Error al cargar voluntarios' });
     } finally {
       setLoading(false);
     }
@@ -54,6 +57,20 @@ export default function OrgVolunteers() {
     }
   }
 
+  async function handleRevert(signupId) {
+    setReverting(signupId);
+    setMessage(null);
+    try {
+      await organizationsAPI.updateVolunteerStatus(id, signupId, 'Registrado');
+      setMessage({ type: 'success', text: 'Registro revertido correctamente.' });
+      load();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Error al revertir registro' });
+    } finally {
+      setReverting(null);
+    }
+  }
+
   const registered = signups.filter((s) => s.status === 'Registrado');
   const completed = signups.filter((s) => s.status === 'Completado');
 
@@ -62,7 +79,7 @@ export default function OrgVolunteers() {
       {/* Breadcrumb */}
       <nav className="mb-8">
         <Link to="/org/oportunidades" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          ← Volver a oportunidades
+          Volver a oportunidades
         </Link>
       </nav>
 
@@ -91,7 +108,7 @@ export default function OrgVolunteers() {
         </div>
         <div className="card text-center">
           <div className="text-3xl font-bold text-green-600 mb-1">{completed.length}</div>
-          <div className="text-sm text-gray-500">Completados</div>
+          <div className="text-sm text-gray-500">Asistieron</div>
         </div>
       </div>
 
@@ -101,9 +118,9 @@ export default function OrgVolunteers() {
         </div>
       ) : signups.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="text-4xl mb-4">👥</div>
+          <div className="text-4xl mb-4">&#x1F465;</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay voluntarios registrados</h3>
-          <p className="text-gray-500">Los voluntarios que se registren aparecerán aquí.</p>
+          <p className="text-gray-500">Los voluntarios que se registren apareceran aqui.</p>
         </div>
       ) : (
         <div className="card overflow-hidden p-0">
@@ -114,7 +131,7 @@ export default function OrgVolunteers() {
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Voluntario</th>
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Fecha de registro</th>
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Estado</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Acción</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Accion</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -141,7 +158,15 @@ export default function OrgVolunteers() {
                           disabled={marking === signup.id}
                           className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium hover:bg-green-100 transition-colors"
                         >
-                          {marking === signup.id ? 'Marcando...' : '✓ Marcar completado'}
+                          {marking === signup.id ? 'Marcando...' : 'Marcar asistencia'}
+                        </button>
+                      ) : signup.status === 'Completado' ? (
+                        <button
+                          onClick={() => handleRevert(signup.id)}
+                          disabled={reverting === signup.id}
+                          className="text-xs bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-lg font-medium hover:bg-yellow-100 transition-colors"
+                        >
+                          {reverting === signup.id ? 'Revirtiendo...' : 'Revertir'}
                         </button>
                       ) : (
                         <span className="text-xs text-gray-400">-</span>

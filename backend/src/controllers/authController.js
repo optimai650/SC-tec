@@ -10,11 +10,22 @@ async function register(req, res, next) {
     const { email, password, phone, community } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+      return res.status(400).json({ error: 'Email y contrasena son requeridos' });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+      return res.status(400).json({ error: 'La contrasena debe tener al menos 6 caracteres' });
+    }
+
+    // For volunteers, phone and community are required
+    const role = req.body.role || 'volunteer';
+    if (role === 'volunteer') {
+      if (!phone) {
+        return res.status(400).json({ error: 'El telefono es requerido para voluntarios' });
+      }
+      if (!community) {
+        return res.status(400).json({ error: 'La comunidad es requerida para voluntarios' });
+      }
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -89,7 +100,7 @@ async function me(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, role: true, organizationId: true, emailVerified: true, createdAt: true },
+      select: { id: true, email: true, role: true, organizationId: true, emailVerified: true, createdAt: true, phone: true, community: true },
     });
 
     if (!user) {
