@@ -3,30 +3,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const syncOpportunityStatus = require('../utils/syncOpportunityStatus');
 
-// Helper: auto-sync opportunity status based on dates and slots
-async function syncOpportunityStatus(opportunity, tx) {
-  const client = tx || prisma;
-  const now = new Date();
-  let newStatus = opportunity.status;
-
-  if (opportunity.endDate < now && opportunity.status !== 'Closed') {
-    newStatus = 'Closed';
-  } else if (opportunity.remainingSlots <= 0 && opportunity.status === 'Published') {
-    newStatus = 'Full';
-  } else if (opportunity.remainingSlots > 0 && opportunity.status === 'Full') {
-    newStatus = 'Published';
-  }
-
-  if (newStatus !== opportunity.status) {
-    await client.opportunity.update({
-      where: { id: opportunity.id },
-      data: { status: newStatus },
-    });
-    opportunity.status = newStatus;
-  }
-  return opportunity;
-}
-
 async function listOrganizations(req, res, next) {
   try {
     const { status } = req.query;
