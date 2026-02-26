@@ -18,6 +18,7 @@ const {
   updateOrgOpportunityStatus,
   getOrgOpportunityVolunteers,
   markOrgVolunteerAttendance,
+  updateOrgVolunteerStatus,
 } = require('../controllers/adminController');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
@@ -45,6 +46,7 @@ router.post('/orgs/:orgId/opportunities', createOrgOpportunity);
 router.put('/orgs/:orgId/opportunities/:oppId', updateOrgOpportunity);
 router.put('/orgs/:orgId/opportunities/:oppId/status', updateOrgOpportunityStatus);
 router.get('/orgs/:orgId/opportunities/:oppId/volunteers', getOrgOpportunityVolunteers);
+router.put('/orgs/:orgId/opportunities/:oppId/volunteers/:signupId/status', updateOrgVolunteerStatus);
 router.put('/orgs/:orgId/opportunities/:oppId/volunteers/:signupId', markOrgVolunteerAttendance);
 
 module.exports = router;

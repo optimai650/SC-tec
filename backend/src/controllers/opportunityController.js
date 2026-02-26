@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const syncOpportunityStatus = require('../utils/syncOpportunityStatus');
 
 async function listPublished(req, res, next) {
   try {
@@ -23,7 +24,8 @@ async function listPublished(req, res, next) {
       orderBy: { startDate: 'asc' },
     });
 
-    res.json(opportunities);
+    const synced = await Promise.all(opportunities.map(o => syncOpportunityStatus(o)));
+    res.json(synced);
   } catch (err) {
     next(err);
   }
@@ -51,4 +53,19 @@ async function getById(req, res, next) {
   }
 }
 
-module.exports = { listPublished, getById };
+async function listLocations(req, res, next) {
+  try {
+    const opportunities = await prisma.opportunity.findMany({
+      where: { status: 'Published' },
+      select: { location: true },
+      distinct: ['location'],
+      orderBy: { location: 'asc' },
+    });
+    const locations = opportunities.map((o) => o.location);
+    res.json(locations);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listPublished, getById, listLocations };

@@ -9,6 +9,7 @@ const {
   updateOpportunityStatus,
   getOpportunityVolunteers,
   updateVolunteerAttendance,
+  updateVolunteerStatus,
 } = require('../controllers/organizationController');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
@@ -21,6 +22,7 @@ router.post('/mine/opportunities', createOpportunity);
 router.put('/mine/opportunities/:id', updateOpportunity);
 router.put('/mine/opportunities/:id/status', updateOpportunityStatus);
 router.get('/mine/opportunities/:id/volunteers', getOpportunityVolunteers);
+router.put('/mine/opportunities/:id/volunteers/:signupId/status', updateVolunteerStatus);
 router.put('/mine/opportunities/:id/volunteers/:signupId', updateVolunteerAttendance);
 
 module.exports = router;

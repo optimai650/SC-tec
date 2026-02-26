@@ -136,22 +136,28 @@ export default function ProfileSettings() {
                 />
               </div>
 
-              {/* Comunidad: visible para todos pero más relevante para voluntarios */}
-              <div>
-                <label className="label" htmlFor="community">Comunidad</label>
-                <input
-                  id="community"
-                  name="community"
-                  type="text"
-                  value={form.community}
-                  onChange={handleChange}
-                  placeholder="Ej: Comunidad Maguen David"
-                  className="input"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Tu comunidad o sinagoga de pertenencia (opcional).
-                </p>
-              </div>
+              {/* Comunidad: solo visible para voluntarios */}
+              {user?.role === 'volunteer' && (
+                <div>
+                  <label className="label" htmlFor="community">Comunidad</label>
+                  <select
+                    id="community"
+                    name="community"
+                    value={form.community}
+                    onChange={handleChange}
+                    className="input"
+                  >
+                    <option value="">Selecciona tu comunidad</option>
+                    <option value="Maguen David">Maguen David</option>
+                    <option value="Monte Sinai">Monte Sinai</option>
+                    <option value="Bet-El">Bet-El</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tu comunidad o sinagoga de pertenencia (opcional).
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

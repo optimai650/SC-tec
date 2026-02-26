@@ -1,10 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const syncOpportunityStatus = require('../utils/syncOpportunityStatus');
 
 async function getMine(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const org = await prisma.organization.findUnique({
@@ -13,7 +14,7 @@ async function getMine(req, res, next) {
     });
 
     if (!org) {
-      return res.status(404).json({ error: 'Organización no encontrada' });
+      return res.status(404).json({ error: 'Organizacion no encontrada' });
     }
 
     res.json(org);
@@ -25,7 +26,7 @@ async function getMine(req, res, next) {
 async function updateMine(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { name, contactEmail, logo, description } = req.body;
@@ -44,7 +45,7 @@ async function updateMine(req, res, next) {
 async function getMyOpportunities(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const opportunities = await prisma.opportunity.findMany({
@@ -55,6 +56,11 @@ async function getMyOpportunities(req, res, next) {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Auto-sync status for each opportunity
+    for (const opp of opportunities) {
+      await syncOpportunityStatus(opp);
+    }
+
     res.json(opportunities);
   } catch (err) {
     next(err);
@@ -64,7 +70,7 @@ async function getMyOpportunities(req, res, next) {
 async function createOpportunity(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { title, description, location, startDate, endDate, totalSlots } = req.body;
@@ -96,7 +102,7 @@ async function createOpportunity(req, res, next) {
 async function updateOpportunity(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { id } = req.params;
@@ -147,7 +153,7 @@ async function updateOpportunity(req, res, next) {
 async function updateOpportunityStatus(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { id } = req.params;
@@ -155,7 +161,7 @@ async function updateOpportunityStatus(req, res, next) {
 
     const validStatuses = ['Draft', 'Published', 'Closed', 'Full'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Estado inválido' });
+      return res.status(400).json({ error: 'Estado invalido' });
     }
 
     const existing = await prisma.opportunity.findFirst({
@@ -180,7 +186,7 @@ async function updateOpportunityStatus(req, res, next) {
 async function getOpportunityVolunteers(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { id } = req.params;
@@ -192,6 +198,9 @@ async function getOpportunityVolunteers(req, res, next) {
     if (!opportunity) {
       return res.status(404).json({ error: 'Oportunidad no encontrada' });
     }
+
+    // Auto-sync status
+    await syncOpportunityStatus(opportunity);
 
     const signups = await prisma.signup.findMany({
       where: { opportunityId: id },
@@ -210,7 +219,7 @@ async function getOpportunityVolunteers(req, res, next) {
 async function updateVolunteerAttendance(req, res, next) {
   try {
     if (!req.user.organizationId) {
-      return res.status(404).json({ error: 'No tienes una organización asignada' });
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
     }
 
     const { id, signupId } = req.params;
@@ -234,6 +243,44 @@ async function updateVolunteerAttendance(req, res, next) {
   }
 }
 
+async function updateVolunteerStatus(req, res, next) {
+  try {
+    if (!req.user.organizationId) {
+      return res.status(404).json({ error: 'No tienes una organizacion asignada' });
+    }
+
+    const { id, signupId } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['Registrado', 'Completado', 'Cancelado'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Estado invalido. Valores permitidos: Registrado, Completado, Cancelado' });
+    }
+
+    const opportunity = await prisma.opportunity.findFirst({
+      where: { id, organizationId: req.user.organizationId },
+    });
+
+    if (!opportunity) {
+      return res.status(404).json({ error: 'Oportunidad no encontrada' });
+    }
+
+    const existingSignup = await prisma.signup.findUnique({ where: { id: signupId } });
+    if (!existingSignup) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+
+    const signup = await prisma.signup.update({
+      where: { id: signupId },
+      data: { status },
+    });
+
+    res.json(signup);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getMine,
   updateMine,
@@ -243,4 +290,5 @@ module.exports = {
   updateOpportunityStatus,
   getOpportunityVolunteers,
   updateVolunteerAttendance,
+  updateVolunteerStatus,
 };

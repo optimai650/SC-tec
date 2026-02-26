@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const syncOpportunityStatus = require('../utils/syncOpportunityStatus');
 
 async function listOrganizations(req, res, next) {
   try {
@@ -102,6 +103,10 @@ async function listAllOpportunities(req, res, next) {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    for (const opp of opportunities) {
+      await syncOpportunityStatus(opp);
+    }
 
     res.json(opportunities);
   } catch (err) {
@@ -278,7 +283,7 @@ async function listOrgOpportunities(req, res, next) {
 
     const org = await prisma.organization.findUnique({ where: { id: orgId } });
     if (!org) {
-      return res.status(404).json({ error: 'Organización no encontrada' });
+      return res.status(404).json({ error: 'Organizacion no encontrada' });
     }
 
     const opportunities = await prisma.opportunity.findMany({
@@ -288,6 +293,10 @@ async function listOrgOpportunities(req, res, next) {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    for (const opp of opportunities) {
+      await syncOpportunityStatus(opp);
+    }
 
     res.json(opportunities);
   } catch (err) {
@@ -453,6 +462,40 @@ async function markOrgVolunteerAttendance(req, res, next) {
   }
 }
 
+async function updateOrgVolunteerStatus(req, res, next) {
+  try {
+    const { orgId, oppId, signupId } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['Registrado', 'Completado', 'Cancelado'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Estado invalido. Valores permitidos: Registrado, Completado, Cancelado' });
+    }
+
+    const opportunity = await prisma.opportunity.findFirst({
+      where: { id: oppId, organizationId: orgId },
+    });
+
+    if (!opportunity) {
+      return res.status(404).json({ error: 'Oportunidad no encontrada' });
+    }
+
+    const existingSignup = await prisma.signup.findUnique({ where: { id: signupId } });
+    if (!existingSignup) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+
+    const signup = await prisma.signup.update({
+      where: { id: signupId },
+      data: { status },
+    });
+
+    res.json(signup);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listOrganizations,
   createOrganization,
@@ -471,4 +514,5 @@ module.exports = {
   updateOrgOpportunityStatus,
   getOrgOpportunityVolunteers,
   markOrgVolunteerAttendance,
+  updateOrgVolunteerStatus,
 };
