@@ -17,9 +17,14 @@ function StatusBadge({ status }) {
     Completado: 'bg-green-100 text-green-700',
     Cancelado: 'bg-gray-100 text-gray-600',
   };
+  const labels = {
+    Registrado: 'Registrado',
+    Completado: 'Asistio',
+    Cancelado: 'Cancelado',
+  };
   return (
     <span className={`badge ${styles[status] || 'bg-gray-100 text-gray-600'}`}>
-      {status}
+      {labels[status] || status}
     </span>
   );
 }
@@ -101,7 +106,7 @@ export default function VolunteerDashboard() {
           <div className="text-3xl font-bold text-green-600 mb-1">
             {signups.filter((s) => s.status === 'Completado').length}
           </div>
-          <div className="text-sm text-gray-500">Completados</div>
+          <div className="text-sm text-gray-500">Asistencias</div>
         </div>
       </div>
 

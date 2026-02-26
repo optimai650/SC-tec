@@ -35,7 +35,12 @@ function SignupStatusBadge({ status }) {
     Completado: 'bg-green-100 text-green-700',
     Cancelado: 'bg-gray-100 text-gray-500',
   };
-  return <span className={`badge ${styles[status] || ''}`}>{status}</span>;
+  const labels = {
+    Registrado: 'Registrado',
+    Completado: 'Asistio',
+    Cancelado: 'Cancelado',
+  };
+  return <span className={`badge ${styles[status] || ''}`}>{labels[status] || status}</span>;
 }
 
 // ---- Tab: Org Info ----
@@ -59,6 +64,18 @@ function TabOrgInfo({ orgId, org, onUpdated }) {
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setMessage(null);
+  }
+
+  function handleLogoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      setMessage({ type: 'error', text: 'El logo no debe superar 500KB.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setForm(prev => ({ ...prev, logo: ev.target.result }));
+    reader.readAsDataURL(file);
   }
 
   async function handleSubmit(e) {
@@ -102,8 +119,17 @@ function TabOrgInfo({ orgId, org, onUpdated }) {
           <input id="contactEmail" name="contactEmail" type="email" value={form.contactEmail} onChange={handleChange} className="input" required />
         </div>
         <div>
-          <label className="label" htmlFor="logo">Logo (URL)</label>
-          <input id="logo" name="logo" type="text" value={form.logo} onChange={handleChange} className="input" placeholder="https://..." />
+          <label className="label" htmlFor="logo">Logo</label>
+          {form.logo && (
+            <img src={form.logo} alt="Logo" className="w-16 h-16 rounded-xl object-cover mb-3" />
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleLogoChange}
+            className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+          />
+          <p className="text-xs text-gray-400 mt-1">Maximo 500KB. Se guardara como imagen.</p>
         </div>
         <div className="pt-2">
           <button type="submit" disabled={loading} className="btn-primary">
@@ -376,6 +402,7 @@ function TabVolunteers({ orgId, opportunities }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [marking, setMarking] = useState(null);
+  const [reverting, setReverting] = useState(null);
 
   const loadVolunteers = useCallback(async () => {
     if (!selectedOppId) return;
@@ -410,6 +437,20 @@ function TabVolunteers({ orgId, opportunities }) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Error al marcar asistencia' });
     } finally {
       setMarking(null);
+    }
+  }
+
+  async function handleRevert(signupId) {
+    setReverting(signupId);
+    setMessage(null);
+    try {
+      await adminAPI.updateOrgVolunteerStatus(orgId, selectedOppId, signupId, 'Registrado');
+      setMessage({ type: 'success', text: 'Registro revertido correctamente.' });
+      loadVolunteers();
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Error al revertir registro' });
+    } finally {
+      setReverting(null);
     }
   }
 
@@ -518,6 +559,14 @@ function TabVolunteers({ orgId, opportunities }) {
                               className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium hover:bg-green-100"
                             >
                               {marking === signup.id ? 'Marcando...' : '✓ Marcar asistencia'}
+                            </button>
+                          ) : signup.status === 'Completado' ? (
+                            <button
+                              onClick={() => handleRevert(signup.id)}
+                              disabled={reverting === signup.id}
+                              className="text-xs bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-lg font-medium hover:bg-yellow-100"
+                            >
+                              {reverting === signup.id ? 'Revirtiendo...' : 'Revertir'}
                             </button>
                           ) : (
                             <span className="text-xs text-gray-400">-</span>
