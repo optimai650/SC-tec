@@ -6,7 +6,7 @@ import { authAPI } from '../../services/api';
 export default function Register() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', phone: '', community: '', customCommunity: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', community: '', customCommunity: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -35,7 +35,7 @@ export default function Register() {
     setLoading(true);
     try {
       const communityValue = form.community === 'Otros' ? form.customCommunity : form.community;
-      const res = await authAPI.register({ email: form.email, password: form.password, phone: form.phone, community: communityValue });
+      const res = await authAPI.register({ firstName: form.firstName, lastName: form.lastName, email: form.email, password: form.password, phone: form.phone, community: communityValue });
       login(res.data.token, res.data.user);
       navigate('/mi-cuenta', { replace: true });
     } catch (err) {
@@ -69,7 +69,39 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* 1. Email */}
+            {/* 1. Nombre(s) */}
+            <div>
+              <label className="label" htmlFor="firstName">Nombre(s)</label>
+              <input
+                id="firstName"
+                type="text"
+                name="firstName"
+                value={form.firstName}
+                onChange={handleChange}
+                placeholder="Ej. Juan"
+                className="input"
+                required
+                autoComplete="given-name"
+              />
+            </div>
+
+            {/* 2. Apellidos */}
+            <div>
+              <label className="label" htmlFor="lastName">Apellidos</label>
+              <input
+                id="lastName"
+                type="text"
+                name="lastName"
+                value={form.lastName}
+                onChange={handleChange}
+                placeholder="Ej. Pérez García"
+                className="input"
+                required
+                autoComplete="family-name"
+              />
+            </div>
+
+            {/* 3. Email */}
             <div>
               <label className="label" htmlFor="email">Email</label>
               <input

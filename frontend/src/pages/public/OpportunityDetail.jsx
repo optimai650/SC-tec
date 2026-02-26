@@ -98,9 +98,13 @@ export default function OpportunityDetail() {
             {/* Organization */}
             {opportunity.organization && (
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold mr-3">
-                  {opportunity.organization.name[0]}
-                </div>
+                {opportunity.organization.logo ? (
+                  <img src={opportunity.organization.logo} alt={opportunity.organization.name} className="w-10 h-10 rounded-full object-cover mr-3 shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold mr-3">
+                    {opportunity.organization.name[0]}
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-semibold text-indigo-600">{opportunity.organization.name}</p>
                   <p className="text-xs text-gray-500">{opportunity.organization.contactEmail}</p>

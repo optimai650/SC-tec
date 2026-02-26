@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 export default function ProfileSettings() {
   const { user } = useAuth();
   const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     community: '',
@@ -22,6 +24,8 @@ export default function ProfileSettings() {
         const u = res.data;
         setForm((prev) => ({
           ...prev,
+          firstName: u.firstName || '',
+          lastName: u.lastName || '',
           email: u.email || '',
           phone: u.phone || '',
           community: u.community || '',
@@ -64,6 +68,8 @@ export default function ProfileSettings() {
     setLoading(true);
 
     const payload = {
+      firstName: form.firstName,
+      lastName: form.lastName,
       email: form.email,
       phone: form.phone,
       community: form.community,
@@ -110,6 +116,34 @@ export default function ProfileSettings() {
               Información personal
             </h2>
             <div className="space-y-4">
+              <div>
+                <label className="label" htmlFor="firstName">Nombre(s)</label>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  placeholder="Ej. Juan"
+                  className="input"
+                  autoComplete="given-name"
+                />
+              </div>
+
+              <div>
+                <label className="label" htmlFor="lastName">Apellidos</label>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  placeholder="Ej. Pérez García"
+                  className="input"
+                  autoComplete="family-name"
+                />
+              </div>
+
               <div>
                 <label className="label" htmlFor="email">Email *</label>
                 <input

@@ -13,6 +13,8 @@ model User {
   passwordHash   String
   role           String        // "superadmin" | "org_admin" | "volunteer"
   emailVerified  Boolean       @default(false)
+  firstName      String?
+  lastName       String?
   phone          String?
   community      String?
   createdAt      DateTime      @default(now())

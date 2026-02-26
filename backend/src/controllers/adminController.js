@@ -162,6 +162,8 @@ async function listVolunteers(req, res, next) {
       select: {
         id: true,
         email: true,
+        firstName: true,
+        lastName: true,
         phone: true,
         community: true,
         createdAt: true,

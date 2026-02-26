@@ -21,6 +21,8 @@ async function main() {
       passwordHash: adminPasswordHash,
       role: 'superadmin',
       emailVerified: true,
+      firstName: 'Admin',
+      lastName: 'Sistema',
     },
   });
   console.log(`✅ Super Admin creado: ${superAdmin.email}`);
@@ -45,6 +47,8 @@ async function main() {
       role: 'org_admin',
       emailVerified: true,
       organizationId: cruzVerde.id,
+      firstName: 'Admin',
+      lastName: 'CruzVerde',
     },
   });
   console.log(`✅ Org Admin creado: ${orgAdmin.email}`);
@@ -57,6 +61,8 @@ async function main() {
       passwordHash: volunteerPasswordHash,
       role: 'volunteer',
       emailVerified: true,
+      firstName: 'Juan',
+      lastName: 'Pérez',
     },
   });
   console.log(`✅ Voluntario creado: ${volunteer.email}`);

@@ -50,7 +50,14 @@ export default function AdminVolunteers() {
   }
 
   const filtered = search
-    ? volunteers.filter((v) => v.email.toLowerCase().includes(search.toLowerCase()))
+    ? volunteers.filter((v) => {
+        const q = search.toLowerCase();
+        return (
+          v.email.toLowerCase().includes(q) ||
+          (v.firstName && v.firstName.toLowerCase().includes(q)) ||
+          (v.lastName && v.lastName.toLowerCase().includes(q))
+        );
+      })
     : volunteers;
 
   return (
@@ -79,7 +86,7 @@ export default function AdminVolunteers() {
       <div className="card mb-6">
         <input
           type="text"
-          placeholder="Buscar por email..."
+          placeholder="Buscar por nombre, apellido o email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="input"
@@ -125,9 +132,16 @@ export default function AdminVolunteers() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-semibold text-sm mr-3">
-                          {vol.email[0].toUpperCase()}
+                          {vol.firstName ? vol.firstName[0].toUpperCase() : vol.email[0].toUpperCase()}
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{vol.email}</span>
+                        <div>
+                          {(vol.firstName || vol.lastName) && (
+                            <p className="text-sm font-medium text-gray-900">
+                              {[vol.firstName, vol.lastName].filter(Boolean).join(' ')}
+                            </p>
+                          )}
+                          <p className={`text-sm ${(vol.firstName || vol.lastName) ? 'text-gray-500' : 'font-medium text-gray-900'}`}>{vol.email}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">{vol.phone || <span className="text-gray-300">-</span>}</td>

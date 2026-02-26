@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cambia-esto-en-produccion';
 
 async function register(req, res, next) {
   try {
-    const { email, password, phone, community } = req.body;
+    const { email, password, phone, community, firstName, lastName } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email y contrasena son requeridos' });
@@ -20,6 +20,12 @@ async function register(req, res, next) {
     // For volunteers, phone and community are required
     const role = req.body.role || 'volunteer';
     if (role === 'volunteer') {
+      if (!firstName) {
+        return res.status(400).json({ error: 'El nombre es requerido para voluntarios' });
+      }
+      if (!lastName) {
+        return res.status(400).json({ error: 'El apellido es requerido para voluntarios' });
+      }
       if (!phone) {
         return res.status(400).json({ error: 'El telefono es requerido para voluntarios' });
       }
@@ -40,6 +46,8 @@ async function register(req, res, next) {
         passwordHash,
         role: 'volunteer',
         emailVerified: true,
+        firstName: firstName || null,
+        lastName: lastName || null,
         phone: phone || null,
         community: community || null,
       },
@@ -100,7 +108,7 @@ async function me(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, email: true, role: true, organizationId: true, emailVerified: true, createdAt: true, phone: true, community: true },
+      select: { id: true, email: true, role: true, organizationId: true, emailVerified: true, createdAt: true, firstName: true, lastName: true, phone: true, community: true },
     });
 
     if (!user) {
@@ -115,7 +123,7 @@ async function me(req, res, next) {
 
 async function updateProfile(req, res, next) {
   try {
-    const { email, phone, community, password } = req.body;
+    const { email, phone, community, password, firstName, lastName } = req.body;
 
     const updateData = {};
 
@@ -130,6 +138,14 @@ async function updateProfile(req, res, next) {
         return res.status(400).json({ error: 'Ya existe otra cuenta con ese email' });
       }
       updateData.email = email;
+    }
+
+    if (firstName !== undefined) {
+      updateData.firstName = firstName || null;
+    }
+
+    if (lastName !== undefined) {
+      updateData.lastName = lastName || null;
     }
 
     if (phone !== undefined) {
@@ -155,6 +171,8 @@ async function updateProfile(req, res, next) {
         id: true,
         email: true,
         role: true,
+        firstName: true,
+        lastName: true,
         phone: true,
         community: true,
         organizationId: true,

@@ -22,7 +22,16 @@ export default function OpportunityCard({ opportunity }) {
             {title}
           </h3>
           {organization && (
-            <p className="text-sm text-indigo-600 font-medium">{organization.name}</p>
+            <div className="flex items-center mt-1">
+              {organization.logo ? (
+                <img src={organization.logo} alt={organization.name} className="w-8 h-8 rounded-full object-cover mr-2 shrink-0" />
+              ) : (
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-sm mr-2 shrink-0">
+                  {organization.name[0]}
+                </div>
+              )}
+              <p className="text-sm text-indigo-600 font-medium">{organization.name}</p>
+            </div>
           )}
         </div>
         {isFull && (
