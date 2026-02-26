@@ -117,7 +117,7 @@ export default function Register() {
               />
             </div>
 
-            {/* 2. Contraseña */}
+            {/* 4. Contraseña */}
             <div>
               <label className="label" htmlFor="password">Contraseña</label>
               <input
@@ -133,7 +133,7 @@ export default function Register() {
               />
             </div>
 
-            {/* 3. Confirmar contraseña */}
+            {/* 5. Confirmar contraseña */}
             <div>
               <label className="label" htmlFor="confirmPassword">Confirmar contraseña</label>
               <input
@@ -149,7 +149,7 @@ export default function Register() {
               />
             </div>
 
-            {/* 4. Número de teléfono */}
+            {/* 6. Número de teléfono */}
             <div>
               <label className="label" htmlFor="phone">Número de teléfono</label>
               <input
@@ -165,7 +165,7 @@ export default function Register() {
               />
             </div>
 
-            {/* 5. Comunidad */}
+            {/* 7. Comunidad */}
             <div>
               <label className="label" htmlFor="community">Comunidad</label>
               <select
@@ -184,7 +184,7 @@ export default function Register() {
               </select>
             </div>
 
-            {/* 6. Especifica tu comunidad (condicional) */}
+            {/* 8. Especifica tu comunidad */}
             {form.community === 'Otros' && (
               <div>
                 <label className="label" htmlFor="customCommunity">Especifica tu comunidad</label>
@@ -201,12 +201,12 @@ export default function Register() {
               </div>
             )}
 
-            {/* 7. Texto legal */}
+            {/* 9. Texto legal */}
             <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
               Al registrarte, aceptas nuestros términos de uso y política de privacidad. Tu cuenta será verificada automáticamente.
             </p>
 
-            {/* 8. Botón */}
+            {/* 10. Botón */}
             <button
               type="submit"
               disabled={loading}

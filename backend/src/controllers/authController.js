@@ -46,8 +46,8 @@ async function register(req, res, next) {
         passwordHash,
         role: 'volunteer',
         emailVerified: true,
-        firstName: firstName || null,
-        lastName: lastName || null,
+        firstName: firstName,
+        lastName: lastName,
         phone: phone || null,
         community: community || null,
       },
@@ -64,7 +64,7 @@ async function register(req, res, next) {
 
     res.status(201).json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId },
+      user: { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId, firstName: user.firstName, lastName: user.lastName },
     });
   } catch (err) {
     next(err);
@@ -97,7 +97,7 @@ async function login(req, res, next) {
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId },
+      user: { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId, firstName: user.firstName, lastName: user.lastName },
     });
   } catch (err) {
     next(err);

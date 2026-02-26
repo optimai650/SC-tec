@@ -126,6 +126,7 @@ export default function ProfileSettings() {
                   onChange={handleChange}
                   placeholder="Ej. Juan"
                   className="input"
+                  required
                   autoComplete="given-name"
                 />
               </div>
@@ -140,6 +141,7 @@ export default function ProfileSettings() {
                   onChange={handleChange}
                   placeholder="Ej. Pérez García"
                   className="input"
+                  required
                   autoComplete="family-name"
                 />
               </div>
