@@ -138,9 +138,13 @@ export default function AdminOrganizations() {
                   <tr key={org.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-sm mr-3">
-                          {org.name[0]}
-                        </div>
+                        {org.logo ? (
+                          <img src={org.logo} alt={org.name} className="w-8 h-8 rounded-full object-cover mr-3 shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-sm mr-3">
+                            {org.name[0]}
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-gray-900 text-sm">{org.name}</p>
                           <p className="text-xs text-gray-500 truncate max-w-[200px]">{org.description}</p>
