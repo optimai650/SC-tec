@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { sendVolunteerConfirmation, sendOrgNewVolunteer } = require('../utils/emailService');
 
 async function createSignup(req, res, next) {
   try {
@@ -57,7 +58,29 @@ async function createSignup(req, res, next) {
       data: { remainingSlots: newRemaining, status: newStatus },
     });
 
-    console.log(`[EMAIL] Confirmación de registro para ${req.user.email} en "${opportunity.title}"`);
+    const [fullOpportunity, volunteer] = await Promise.all([
+      prisma.opportunity.findUnique({
+        where: { id: opportunityId },
+        include: { organization: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: volunteerId },
+        select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+      }),
+    ]);
+
+    await Promise.allSettled([
+      sendVolunteerConfirmation({
+        volunteer,
+        opportunity: fullOpportunity,
+        organization: fullOpportunity.organization,
+      }),
+      sendOrgNewVolunteer({
+        volunteer,
+        opportunity: fullOpportunity,
+        organization: fullOpportunity.organization,
+      }),
+    ]);
 
     res.status(201).json(signup);
   } catch (err) {
