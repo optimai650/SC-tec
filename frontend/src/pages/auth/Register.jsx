@@ -40,6 +40,12 @@ export default function Register() {
       return;
     }
 
+    const phoneDigits = form.phone.replace(/\s|-/g, '');
+    if (!/^\d{10}$/.test(phoneDigits)) {
+      setError('El teléfono debe tener 10 dígitos');
+      return;
+    }
+
     setLoading(true);
     try {
       const communityValue = form.community === 'Otros' ? form.customCommunity : form.community;
@@ -168,7 +174,7 @@ export default function Register() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="ej. 55 1234 5678"
+                placeholder="10 dígitos, ej. 5512345678"
                 className="input"
                 required
                 autoComplete="tel"

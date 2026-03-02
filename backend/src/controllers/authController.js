@@ -41,6 +41,10 @@ async function register(req, res, next) {
       }
     }
 
+    if (phone && !/^\d{10}$/.test(phone.replace(/\s|-/g, ''))) {
+      return res.status(400).json({ error: 'El teléfono debe tener 10 dígitos' });
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'Ya existe una cuenta con ese email' });
@@ -164,6 +168,17 @@ async function updateProfile(req, res, next) {
     }
 
     if (phone !== undefined) {
+      if (phone && !/^\d{10}$/.test(phone.replace(/\s|-/g, ''))) {
+        return res.status(400).json({ error: 'El teléfono debe tener 10 dígitos' });
+      }
+      if (phone) {
+        const existingPhone = await prisma.user.findFirst({
+          where: { phone, NOT: { id: req.user.id } },
+        });
+        if (existingPhone) {
+          return res.status(400).json({ error: 'Ya existe una cuenta registrada con ese número de teléfono' });
+        }
+      }
       updateData.phone = phone || null;
     }
 
@@ -173,8 +188,14 @@ async function updateProfile(req, res, next) {
 
     // Si viene contraseña nueva, hacer bcrypt hash
     if (password) {
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ error: 'La contraseña debe contener al menos una letra mayúscula' });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({ error: 'La contraseña debe contener al menos una letra minúscula' });
       }
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }

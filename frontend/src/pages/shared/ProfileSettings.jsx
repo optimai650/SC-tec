@@ -55,12 +55,28 @@ export default function ProfileSettings() {
 
     // Validar contraseñas si se ingresó una nueva
     if (form.password) {
-      if (form.password.length < 6) {
-        setMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+      if (form.password.length < 8) {
+        setMessage({ type: 'error', text: 'La contraseña debe tener al menos 8 caracteres' });
+        return;
+      }
+      if (!/[A-Z]/.test(form.password)) {
+        setMessage({ type: 'error', text: 'La contraseña debe contener al menos una letra mayúscula' });
+        return;
+      }
+      if (!/[a-z]/.test(form.password)) {
+        setMessage({ type: 'error', text: 'La contraseña debe contener al menos una letra minúscula' });
         return;
       }
       if (form.password !== form.confirmPassword) {
         setMessage({ type: 'error', text: 'Las contraseñas no coinciden.' });
+        return;
+      }
+    }
+
+    if (form.phone) {
+      const phoneDigits = form.phone.replace(/\s|-/g, '');
+      if (!/^\d{10}$/.test(phoneDigits)) {
+        setMessage({ type: 'error', text: 'El teléfono debe tener 10 dígitos' });
         return;
       }
     }
@@ -167,7 +183,7 @@ export default function ProfileSettings() {
                   type="tel"
                   value={form.phone}
                   onChange={handleChange}
-                  placeholder="Ej: +52 55 1234 5678"
+                  placeholder="10 dígitos, ej. 5512345678"
                   className="input"
                 />
               </div>
@@ -214,7 +230,7 @@ export default function ProfileSettings() {
                   type="password"
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres, una mayúscula y una minúscula"
                   className="input"
                 />
               </div>
