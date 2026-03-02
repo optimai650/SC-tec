@@ -15,9 +15,15 @@ voluntarios-app/
 
 ### 1. Backend
 
+Configura las variables de entorno:
 ```bash
 cd backend
 cp .env.example .env
+# Edita .env y agrega tu RESEND_API_KEY (obtener en https://resend.com)
+```
+
+Luego instala y levanta:
+```bash
 npm run setup
 # Instala dependencias, migra la BD y carga datos de prueba
 ```
@@ -68,8 +74,22 @@ npm run db:studio     # Abre Prisma Studio (UI para ver la BD)
 - **Org Admin** — Gestiona su organización y sus oportunidades
 - **Voluntario** — Navega y se registra en oportunidades
 
+## Emails transaccionales
+
+La app usa **Resend** para enviar emails automáticamente:
+
+- **Bienvenida** — al voluntario cuando crea su cuenta
+- **Confirmación de registro** — al voluntario cuando se inscribe a una oportunidad (incluye título, organización, descripción, ubicación y fechas)
+- **Notificación a la organización** — cuando un voluntario se inscribe (incluye nombre, email, teléfono y comunidad del voluntario)
+
+Requiere `RESEND_API_KEY` en `.env`. Sin dominio propio solo se puede enviar a emails verificados en el panel de Resend; con dominio verificado se envía a cualquier destinatario.
+
+## Validaciones
+
+- **Contraseña**: mínimo 8 caracteres, al menos una mayúscula y una minúscula
+- **Teléfono**: exactamente 10 dígitos (se guarda normalizado sin espacios ni guiones); único por cuenta
+
 ## Notas
 
-- Emails están en modo `console.log` — los verás en la terminal del backend
 - SQLite se guarda en `backend/prisma/dev.db` (ignorado por git)
-- Para producción: cambiar `DATABASE_URL` a PostgreSQL y configurar proveedor de email
+- Para producción: cambiar `DATABASE_URL` a PostgreSQL y verificar dominio en Resend
