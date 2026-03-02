@@ -51,8 +51,8 @@ async function register(req, res, next) {
       return res.status(400).json({ error: 'Ya existe una cuenta con ese email' });
     }
 
-    if (phone) {
-      const existingPhone = await prisma.user.findFirst({ where: { phone } });
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
       if (existingPhone) {
         return res.status(400).json({ error: 'Ya existe una cuenta registrada con ese número de teléfono' });
       }
