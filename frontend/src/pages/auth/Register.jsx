@@ -27,8 +27,16 @@ export default function Register() {
       return;
     }
 
-    if (form.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (form.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (!/[A-Z]/.test(form.password)) {
+      setError('La contraseña debe contener al menos una letra mayúscula');
+      return;
+    }
+    if (!/[a-z]/.test(form.password)) {
+      setError('La contraseña debe contener al menos una letra minúscula');
       return;
     }
 
@@ -39,7 +47,9 @@ export default function Register() {
       login(res.data.token, res.data.user);
       navigate('/mi-cuenta', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al crear la cuenta');
+      const msg = err.response?.data?.error || 'Error al crear la cuenta';
+      setError(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -126,7 +136,7 @@ export default function Register() {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres, una mayúscula y una minúscula"
                 className="input"
                 required
                 autoComplete="new-password"

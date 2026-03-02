@@ -14,8 +14,14 @@ async function register(req, res, next) {
       return res.status(400).json({ error: 'Email y contrasena son requeridos' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'La contrasena debe tener al menos 6 caracteres' });
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'La contraseña debe contener al menos una letra mayúscula' });
+    }
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json({ error: 'La contraseña debe contener al menos una letra minúscula' });
     }
 
     // For volunteers, phone and community are required
@@ -38,6 +44,13 @@ async function register(req, res, next) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'Ya existe una cuenta con ese email' });
+    }
+
+    if (phone) {
+      const existingPhone = await prisma.user.findFirst({ where: { phone } });
+      if (existingPhone) {
+        return res.status(400).json({ error: 'Ya existe una cuenta registrada con ese número de teléfono' });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
