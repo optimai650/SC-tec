@@ -3,6 +3,10 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = 'Plataforma de Voluntarios <onboarding@resend.dev>';
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function formatDateES(date) {
   return new Date(date).toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -45,48 +49,48 @@ async function sendVolunteerConfirmation({ volunteer, opportunity, organization 
           <!-- Body -->
           <tr>
             <td style="padding:36px 40px;">
-              <p style="margin:0 0 20px;color:#3d4a5c;font-size:16px;">Hola, <strong>${volunteerName}</strong> 👋</p>
+              <p style="margin:0 0 20px;color:#3d4a5c;font-size:16px;">Hola, <strong>${escapeHtml(volunteerName)}</strong> 👋</p>
               <p style="margin:0 0 28px;color:#5a6778;font-size:15px;line-height:1.6;">
                 ¡Gracias por unirte como voluntario! Tu registro para la siguiente oportunidad ha sido confirmado exitosamente.
               </p>
 
               <!-- Opportunity Card -->
               <div style="background:#f8faff;border:1px solid #dce8ff;border-left:4px solid #1a73e8;border-radius:8px;padding:24px;margin-bottom:28px;">
-                <h2 style="margin:0 0 4px;color:#1a73e8;font-size:20px;">${opportunity.title}</h2>
-                <p style="margin:0 0 16px;color:#34a853;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${organization.name}</p>
-                <p style="margin:0 0 20px;color:#5a6778;font-size:14px;line-height:1.7;">${opportunity.description}</p>
+                <h2 style="margin:0 0 4px;color:#1a73e8;font-size:20px;">${escapeHtml(opportunity.title)}</h2>
+                <p style="margin:0 0 16px;color:#34a853;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(organization.name)}</p>
+                <p style="margin:0 0 20px;color:#5a6778;font-size:14px;line-height:1.7;">${escapeHtml(opportunity.description)}</p>
 
                 <table cellpadding="0" cellspacing="0" width="100%">
                   <tr>
                     <td style="padding-bottom:12px;">
-                      <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <span style="display:inline-block;">
                         <span style="font-size:16px;">📍</span>
-                        <span style="color:#3d4a5c;font-size:14px;"><strong>Ubicación:</strong> ${opportunity.location}</span>
+                        <span style="color:#3d4a5c;font-size:14px;"><strong>Ubicación:</strong> ${escapeHtml(opportunity.location)}</span>
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding-bottom:12px;">
-                      <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <span style="display:inline-block;">
                         <span style="font-size:16px;">🗓️</span>
-                        <span style="color:#3d4a5c;font-size:14px;"><strong>Inicio:</strong> ${startDate}</span>
+                        <span style="color:#3d4a5c;font-size:14px;"><strong>Inicio:</strong> ${escapeHtml(startDate)}</span>
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding-bottom:${slotsLeft !== undefined ? '12' : '0'}px;">
-                      <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <span style="display:inline-block;">
                         <span style="font-size:16px;">🏁</span>
-                        <span style="color:#3d4a5c;font-size:14px;"><strong>Fin:</strong> ${endDate}</span>
+                        <span style="color:#3d4a5c;font-size:14px;"><strong>Fin:</strong> ${escapeHtml(endDate)}</span>
                       </span>
                     </td>
                   </tr>
                   ${slotsLeft !== undefined ? `
                   <tr>
                     <td>
-                      <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <span style="display:inline-block;">
                         <span style="font-size:16px;">👥</span>
-                        <span style="color:#3d4a5c;font-size:14px;"><strong>Cupos disponibles:</strong> ${slotsLeft}</span>
+                        <span style="color:#3d4a5c;font-size:14px;"><strong>Cupos disponibles:</strong> ${escapeHtml(slotsLeft)}</span>
                       </span>
                     </td>
                   </tr>` : ''}
@@ -94,7 +98,7 @@ async function sendVolunteerConfirmation({ volunteer, opportunity, organization 
               </div>
 
               <p style="margin:0 0 8px;color:#5a6778;font-size:14px;line-height:1.6;">
-                Si tienes alguna pregunta, puedes contactar directamente a <strong>${organization.name}</strong>.
+                Si tienes alguna pregunta, puedes contactar directamente a <strong>${escapeHtml(organization.name)}</strong>.
               </p>
               <p style="margin:0;color:#5a6778;font-size:14px;line-height:1.6;">
                 ¡Gracias por hacer una diferencia! 💚
@@ -166,14 +170,14 @@ async function sendOrgNewVolunteer({ volunteer, opportunity, organization }) {
           <!-- Body -->
           <tr>
             <td style="padding:36px 40px;">
-              <p style="margin:0 0 20px;color:#3d4a5c;font-size:16px;">Hola, equipo de <strong>${organization.name}</strong> 👋</p>
+              <p style="margin:0 0 20px;color:#3d4a5c;font-size:16px;">Hola, equipo de <strong>${escapeHtml(organization.name)}</strong> 👋</p>
               <p style="margin:0 0 28px;color:#5a6778;font-size:15px;line-height:1.6;">
                 Un nuevo voluntario se ha registrado en la siguiente oportunidad:
               </p>
 
               <!-- Opportunity Title -->
               <div style="background:#f8faff;border:1px solid #dce8ff;border-left:4px solid #1a73e8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
-                <p style="margin:0;color:#1a73e8;font-size:18px;font-weight:700;">${opportunity.title}</p>
+                <p style="margin:0;color:#1a73e8;font-size:18px;font-weight:700;">${escapeHtml(opportunity.title)}</p>
               </div>
 
               <!-- Volunteer Info Card -->
@@ -182,26 +186,26 @@ async function sendOrgNewVolunteer({ volunteer, opportunity, organization }) {
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid #e8f5e9;">
                     <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Nombre completo</span>
-                    <span style="color:#1f2937;font-size:15px;font-weight:600;">${volunteerName}</span>
+                    <span style="color:#1f2937;font-size:15px;font-weight:600;">${escapeHtml(volunteerName)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid #e8f5e9;">
                     <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Correo electrónico</span>
-                    <a href="mailto:${volunteer.email}" style="color:#1a73e8;font-size:15px;text-decoration:none;">${volunteer.email}</a>
+                    <a href="mailto:${escapeHtml(volunteer.email)}" style="color:#1a73e8;font-size:15px;text-decoration:none;">${escapeHtml(volunteer.email)}</a>
                   </td>
                 </tr>
                 ${volunteer.phone ? `
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid #e8f5e9;">
                     <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Teléfono</span>
-                    <span style="color:#1f2937;font-size:15px;">${volunteer.phone}</span>
+                    <span style="color:#1f2937;font-size:15px;">${escapeHtml(volunteer.phone)}</span>
                   </td>
                 </tr>` : ''}
                 <tr>
                   <td style="padding:14px 20px;">
                     <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Fecha de registro</span>
-                    <span style="color:#1f2937;font-size:15px;">${registeredAt}</span>
+                    <span style="color:#1f2937;font-size:15px;">${escapeHtml(registeredAt)}</span>
                   </td>
                 </tr>
               </table>

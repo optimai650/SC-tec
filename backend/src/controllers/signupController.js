@@ -69,18 +69,20 @@ async function createSignup(req, res, next) {
       }),
     ]);
 
-    await Promise.allSettled([
-      sendVolunteerConfirmation({
-        volunteer,
-        opportunity: fullOpportunity,
-        organization: fullOpportunity.organization,
-      }),
-      sendOrgNewVolunteer({
-        volunteer,
-        opportunity: fullOpportunity,
-        organization: fullOpportunity.organization,
-      }),
-    ]);
+    if (fullOpportunity && volunteer) {
+      Promise.allSettled([
+        sendVolunteerConfirmation({
+          volunteer,
+          opportunity: fullOpportunity,
+          organization: fullOpportunity.organization,
+        }),
+        sendOrgNewVolunteer({
+          volunteer,
+          opportunity: fullOpportunity,
+          organization: fullOpportunity.organization,
+        }),
+      ]).catch(() => {});
+    }
 
     res.status(201).json(signup);
   } catch (err) {
