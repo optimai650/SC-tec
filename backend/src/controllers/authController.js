@@ -44,6 +44,7 @@ async function register(req, res, next) {
     if (phone && !/^\d{10}$/.test(phone.replace(/\s|-/g, ''))) {
       return res.status(400).json({ error: 'El teléfono debe tener 10 dígitos' });
     }
+    const normalizedPhone = phone ? phone.replace(/\s|-/g, '') : null;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -66,7 +67,7 @@ async function register(req, res, next) {
         emailVerified: true,
         firstName: firstName,
         lastName: lastName,
-        phone: phone || null,
+        phone: normalizedPhone,
         community: community || null,
       },
     });
@@ -179,7 +180,7 @@ async function updateProfile(req, res, next) {
           return res.status(400).json({ error: 'Ya existe una cuenta registrada con ese número de teléfono' });
         }
       }
-      updateData.phone = phone || null;
+      updateData.phone = phone ? phone.replace(/\s|-/g, '') : null;
     }
 
     if (community !== undefined) {
