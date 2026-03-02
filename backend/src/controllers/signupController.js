@@ -65,7 +65,7 @@ async function createSignup(req, res, next) {
       }),
       prisma.user.findUnique({
         where: { id: volunteerId },
-        select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+        select: { id: true, email: true, firstName: true, lastName: true, phone: true, community: true },
       }),
     ]);
 

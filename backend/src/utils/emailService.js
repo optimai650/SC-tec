@@ -202,6 +202,13 @@ async function sendOrgNewVolunteer({ volunteer, opportunity, organization }) {
                     <span style="color:#1f2937;font-size:15px;">${escapeHtml(volunteer.phone)}</span>
                   </td>
                 </tr>` : ''}
+                ${volunteer.community ? `
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e8f5e9;">
+                    <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Comunidad</span>
+                    <span style="color:#1f2937;font-size:15px;">${escapeHtml(volunteer.community)}</span>
+                  </td>
+                </tr>` : ''}
                 <tr>
                   <td style="padding:14px 20px;">
                     <span style="color:#6b7280;font-size:13px;display:block;margin-bottom:2px;">Fecha de registro</span>
@@ -238,4 +245,86 @@ async function sendOrgNewVolunteer({ volunteer, opportunity, organization }) {
   }
 }
 
-module.exports = { sendVolunteerConfirmation, sendOrgNewVolunteer };
+async function sendWelcomeVolunteer({ volunteer }) {
+  const volunteerName = volunteer.firstName
+    ? `${volunteer.firstName}${volunteer.lastName ? ' ' + volunteer.lastName : ''}`
+    : volunteer.email;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bienvenido a la Plataforma de Voluntarios</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1a73e8 0%,#34a853 100%);padding:40px 40px 32px;text-align:center;">
+              <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">¡Bienvenido/a a la Plataforma de Voluntarios!</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:15px;">Ya formas parte de nuestra comunidad</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 20px;color:#3d4a5c;font-size:16px;">Hola, <strong>${escapeHtml(volunteerName)}</strong> 👋</p>
+              <p style="margin:0 0 20px;color:#5a6778;font-size:15px;line-height:1.6;">
+                Nos alegra mucho tenerte con nosotros. Tu cuenta ha sido creada exitosamente y ahora eres parte de nuestra comunidad de voluntarios.
+              </p>
+              <p style="margin:0 0 28px;color:#5a6778;font-size:15px;line-height:1.6;">
+                Desde la plataforma podrás explorar las oportunidades de voluntariado disponibles, registrarte en las que más te interesen y contribuir a causas que generan un impacto real en tu comunidad.
+              </p>
+
+              <!-- Highlight box -->
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #34a853;border-radius:8px;padding:20px 24px;margin-bottom:28px;">
+                <p style="margin:0 0 12px;color:#166534;font-size:15px;font-weight:600;">¿Qué puedes hacer ahora?</p>
+                <ul style="margin:0;padding-left:20px;color:#4b7c59;font-size:14px;line-height:1.8;">
+                  <li>Explorar las oportunidades de voluntariado disponibles</li>
+                  <li>Inscribirte en actividades que se ajusten a tus intereses</li>
+                  <li>Hacer seguimiento a tus registros activos</li>
+                </ul>
+              </div>
+
+              <p style="margin:0 0 8px;color:#5a6778;font-size:14px;line-height:1.6;">
+                Si tienes alguna pregunta, no dudes en ponerte en contacto con nosotros.
+              </p>
+              <p style="margin:0;color:#5a6778;font-size:14px;line-height:1.6;">
+                ¡Gracias por querer hacer una diferencia! 💚
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8faff;border-top:1px solid #e8f0fe;padding:20px 40px;text-align:center;">
+              <p style="margin:0;color:#9aa5b4;font-size:12px;">
+                Plataforma de Voluntarios · Este email fue enviado automáticamente, por favor no respondas.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: volunteer.email,
+      subject: '🎉 ¡Bienvenido a la Plataforma de Voluntarios!',
+      html,
+    });
+  } catch (err) {
+    console.error('[emailService] Error enviando email de bienvenida al voluntario:', err.message);
+  }
+}
+
+module.exports = { sendVolunteerConfirmation, sendOrgNewVolunteer, sendWelcomeVolunteer };

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
+const { sendWelcomeVolunteer } = require('../utils/emailService');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'cambia-esto-en-produccion';
@@ -53,8 +54,9 @@ async function register(req, res, next) {
       },
     });
 
-    // Simular envío de email
-    console.log(`[EMAIL] Bienvenido ${email} a la plataforma de voluntarios!`);
+    if (user.role === 'volunteer') {
+      sendWelcomeVolunteer({ volunteer: user }).catch(() => {});
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId },
