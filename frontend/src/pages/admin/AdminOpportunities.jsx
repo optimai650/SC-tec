@@ -20,6 +20,10 @@ export default function AdminOpportunities() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
 
+  const [viewingOpp, setViewingOpp] = useState(null);
+  const [viewingVolunteers, setViewingVolunteers] = useState([]);
+  const [viewingLoading, setViewingLoading] = useState(false);
+
   useEffect(() => {
     fetchOpportunities();
   }, []);
@@ -35,7 +39,23 @@ export default function AdminOpportunities() {
     }
   };
 
+  async function openView(op) {
+    setViewingOpp(op);
+    setEditingOpp(null);
+    setViewingVolunteers([]);
+    setViewingLoading(true);
+    try {
+      const res = await adminAPI.getOrgOpportunityVolunteers(op.organizationId, op.id);
+      setViewingVolunteers(res.data);
+    } catch {
+      setViewingVolunteers([]);
+    } finally {
+      setViewingLoading(false);
+    }
+  }
+
   function openEdit(op) {
+    setViewingOpp(null);
     const pad = (n) => String(n).padStart(2, '0');
     const toLocal = (d) => {
       const dt = new Date(d);
@@ -103,6 +123,112 @@ export default function AdminOpportunities() {
           className="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
+
+      {viewingOpp && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6">
+          {/* Header del panel */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">{viewingOpp.title}</h3>
+              <p className="text-sm text-indigo-600 font-medium">{viewingOpp.organization?.name}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openEdit(viewingOpp)}
+                className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => setViewingOpp(null)}
+                className="text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          {/* Info de la oportunidad */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-xs text-gray-500 mb-1 uppercase font-semibold">Descripción</p>
+              <p className="text-sm text-gray-700">{viewingOpp.description}</p>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-0.5 uppercase font-semibold">Ubicación</p>
+                <p className="text-sm text-gray-700">📍 {viewingOpp.location}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-0.5 uppercase font-semibold">Fechas</p>
+                <p className="text-sm text-gray-700">
+                  🗓️ {new Date(viewingOpp.startDate).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {' → '}
+                  {new Date(viewingOpp.endDate).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-0.5 uppercase font-semibold">Cupos</p>
+                <p className="text-sm text-gray-700">
+                  <span className="text-green-600 font-semibold">{viewingOpp.remainingSlots}</span> disponibles de <span className="font-semibold">{viewingOpp.totalSlots}</span> totales
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de voluntarios */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3 pb-2 border-b">
+              Voluntarios registrados
+            </h4>
+            {viewingLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : viewingVolunteers.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">Sin voluntarios registrados.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Email</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Teléfono</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Comunidad</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {viewingVolunteers.map((signup) => {
+                      const v = signup.volunteer;
+                      const name = v?.firstName ? `${v.firstName} ${v.lastName || ''}`.trim() : v?.email;
+                      const statusColors = {
+                        Registrado: 'bg-blue-100 text-blue-700',
+                        Completado: 'bg-green-100 text-green-700',
+                        Cancelado: 'bg-gray-100 text-gray-500',
+                      };
+                      return (
+                        <tr key={signup.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-900">{name}</td>
+                          <td className="px-4 py-3 text-gray-600">{v?.email}</td>
+                          <td className="px-4 py-3 text-gray-600">{v?.phone || <span className="text-gray-300">-</span>}</td>
+                          <td className="px-4 py-3 text-gray-600">{v?.community || <span className="text-gray-300">-</span>}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[signup.status] || 'bg-gray-100 text-gray-600'}`}>
+                              {signup.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {editingOpp && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-6">
@@ -193,12 +319,20 @@ export default function AdminOpportunities() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => openEdit(op)}
-                        className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-200"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openView(op)}
+                          className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100"
+                        >
+                          Ver
+                        </button>
+                        <button
+                          onClick={() => openEdit(op)}
+                          className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-200"
+                        >
+                          Editar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
