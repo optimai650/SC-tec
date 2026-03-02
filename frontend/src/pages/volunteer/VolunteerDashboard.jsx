@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { signupsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import BackButton from '../../components/BackButton';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-MX', {
@@ -76,10 +77,18 @@ export default function VolunteerDashboard() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi cuenta</h1>
-        <p className="text-gray-500">{user.email}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi cuenta</h1>
+            <p className="text-gray-500">{user.email}</p>
+          </div>
+          <Link to="/oportunidades" className="btn-primary text-sm">
+            Ver más oportunidades
+          </Link>
+        </div>
       </div>
 
       {message && (

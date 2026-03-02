@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { opportunitiesAPI } from '../../services/api';
 import OpportunityCard from '../../components/OpportunityCard';
+import BackButton from '../../components/BackButton';
 
 export default function Opportunities() {
   const [opportunities, setOpportunities] = useState([]);
@@ -46,6 +47,7 @@ export default function Opportunities() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">

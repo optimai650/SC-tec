@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -55,6 +56,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de administración</h1>

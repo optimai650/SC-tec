@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -68,6 +69,7 @@ export default function AdminSignups() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-1">Todos los registros</h1>

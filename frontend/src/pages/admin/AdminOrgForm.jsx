@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 export default function AdminOrgForm() {
   const navigate = useNavigate();
@@ -59,12 +60,7 @@ export default function AdminOrgForm() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <Link to="/admin/organizaciones" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          ← Volver a organizaciones
-        </Link>
-      </nav>
+      <BackButton />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Crear nueva organización</h1>

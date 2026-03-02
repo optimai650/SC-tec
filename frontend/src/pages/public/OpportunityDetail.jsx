@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { opportunitiesAPI, signupsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import BackButton from '../../components/BackButton';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-MX', {
@@ -84,12 +85,7 @@ export default function OpportunityDetail() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <Link to="/oportunidades" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          ← Volver a oportunidades
-        </Link>
-      </nav>
+      <BackButton />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}

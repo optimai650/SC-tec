@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { organizationsAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -61,6 +62,7 @@ export default function OrgOpportunities() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>

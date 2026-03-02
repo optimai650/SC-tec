@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 export default function Register() {
   const { login, user } = useAuth();
@@ -64,6 +65,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
+        <BackButton />
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/logo.png" alt="Voluntariado Maguen David" className="h-16 w-auto mx-auto mb-4" onError={(e) => { e.target.style.display='none' }} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 // ---- Helpers ----
 
@@ -653,12 +654,7 @@ export default function AdminOrgPanel() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Breadcrumb */}
-      <nav className="mb-6">
-        <Link to="/admin/organizaciones" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          ← Volver a organizaciones
-        </Link>
-      </nav>
+      <BackButton />
 
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">

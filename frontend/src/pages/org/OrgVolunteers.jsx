@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { organizationsAPI } from '../../services/api';
+import BackButton from '../../components/BackButton';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-MX', {
@@ -76,12 +77,7 @@ export default function OrgVolunteers() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <Link to="/org/oportunidades" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          Volver a oportunidades
-        </Link>
-      </nav>
+      <BackButton />
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-1">Voluntarios registrados</h1>
