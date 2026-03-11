@@ -11,18 +11,24 @@ SC-tec/
 └── README.md
 ```
 
----
-
 ## Correr en local
 
 ### 1. Backend
 
+Configura las variables de entorno:
 ```bash
 cd backend
 cp .env.example .env
-npm install
-npx prisma migrate dev --name init
-npx prisma db seed
+```
+
+Luego instala y levanta:
+```bash
+npm run setup
+# Instala dependencias, migra la BD y carga datos de prueba
+```
+
+Luego en otra terminal:
+```bash
 npm run dev
 # Corre en http://localhost:3001
 ```
@@ -63,7 +69,6 @@ Abre `http://localhost:5173` en tu navegador.
 | A01234571 | A01234571 |
 
 > La contraseña por defecto de cada alumno es su propia matrícula.
-> El superadmin puede cambiarla desde el panel.
 
 ---
 
@@ -95,11 +100,11 @@ Hay dos ferias por año:
 | Feria 1 | Febrero-Junio, Intensivo de Invierno |
 | Feria 2 | Verano, Agosto-Diciembre |
 
-El superadmin controla cuál feria está activa. Solo se muestran los proyectos de los periodos de la feria activa.
+El superadmin controla cuál feria está activa. Solo se muestran los proyectos de la feria activa.
 
 ---
 
-## Importar matrículas preregistradas
+## Importar matrículas
 
 Desde el panel admin → **Matrículas**, pegar en el textarea o subir un `.csv`:
 
@@ -111,23 +116,20 @@ A01234569
 
 Formato: `matricula,nombre,email` (nombre y email opcionales). Una por línea.
 
-Al importar se crean automáticamente los usuarios con contraseña = matrícula.
-
 ---
 
 ## Comandos útiles (backend)
 
 ```bash
-npx prisma migrate dev    # Corre migraciones
-npx prisma db seed        # Carga datos de prueba
-npx prisma studio         # UI para ver la base de datos
+npm run db:migrate    # Corre migraciones de Prisma
+npm run db:seed       # Carga datos de prueba
+npm run db:studio     # Abre Prisma Studio (UI para ver la BD)
 ```
 
 ---
 
-## Notas técnicas
+## Notas
 
 - SQLite se guarda en `backend/prisma/dev.db` (ignorado por git)
-- Los logos de socios se guardan como base64 en la base de datos
 - Para producción: cambiar `DATABASE_URL` a PostgreSQL en `.env`
 - JWT secret en variable `JWT_SECRET` — cambiar en producción
