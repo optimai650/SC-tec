@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import { getStats } from '../../services/admin';
 
@@ -25,6 +26,7 @@ function StatCard({ label, value, icon, color = 'blue' }) {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +40,7 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 p-8">
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
         <p className="text-gray-500 mb-8">Resumen general de la Feria de Servicio Social</p>
 

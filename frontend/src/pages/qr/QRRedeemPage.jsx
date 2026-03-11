@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getProjectByToken } from '../../services/projects';
 import { redeemCode } from '../../services/inscriptions';
@@ -127,6 +127,10 @@ export default function QRRedeemPage() {
       <PublicNavbar />
 
       <div className="max-w-lg mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">← Atrás</button>
+          <Link to="/" className="text-sm text-[#003087] hover:underline flex items-center gap-1">← Ver oferta de proyectos</Link>
+        </div>
         {/* Project Info */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-[#003087] to-[#0051a8] p-6 text-white">

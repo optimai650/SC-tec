@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 
@@ -55,6 +55,10 @@ export default function LoginPage() {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-full max-w-md p-8">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">← Atrás</button>
+            <Link to="/" className="text-sm text-[#003087] hover:underline flex items-center gap-1">← Ver oferta de proyectos</Link>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Iniciar sesión</h1>
           <p className="text-gray-500 text-sm mb-6">Ingresa con tu matrícula o correo institucional</p>
 

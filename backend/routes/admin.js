@@ -12,10 +12,17 @@ const adminOnly = [requireAuth, requireRole('superadmin')];
 // GET /api/admin/matriculas
 router.get('/matriculas', ...adminOnly, async (req, res, next) => {
   try {
-    const matriculas = await prisma.preregisteredMatricula.findMany({
-      orderBy: { importedAt: 'desc' }
-    });
-    res.json(matriculas);
+    const { fairId } = req.query;
+    const where = fairId ? { fairId } : {};
+    const [matriculas, fairs] = await Promise.all([
+      prisma.preregisteredMatricula.findMany({
+        where,
+        include: { fair: true },
+        orderBy: { importedAt: 'desc' }
+      }),
+      prisma.fair.findMany({ orderBy: { createdAt: 'desc' } })
+    ]);
+    res.json({ matriculas, fairs });
   } catch (err) {
     next(err);
   }
@@ -26,6 +33,12 @@ router.post('/matriculas', ...adminOnly, async (req, res, next) => {
   try {
     const { csv } = req.body;
     if (!csv) return res.status(400).json({ error: 'CSV requerido' });
+
+    // Obtener feria activa
+    const activeFair = await prisma.fair.findFirst({ where: { isActive: true } });
+    if (!activeFair) {
+      return res.status(400).json({ error: 'No hay una feria activa. Activa una feria antes de importar matrículas.' });
+    }
 
     const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
     let imported = 0;
@@ -41,22 +54,24 @@ router.post('/matriculas', ...adminOnly, async (req, res, next) => {
 
       try {
         await prisma.preregisteredMatricula.upsert({
-          where: { matricula },
+          where: { matricula_fairId: { matricula, fairId: activeFair.id } },
           update: { nombre, email },
-          create: { matricula, nombre, email }
+          create: { matricula, nombre, email, fairId: activeFair.id }
         });
 
-        await prisma.user.upsert({
-          where: { matricula },
-          update: {},
-          create: {
-            matricula,
-            passwordHash: await bcrypt.hash(matricula, 10),
-            role: 'alumno',
-            firstName: nombre || undefined,
-            email: email || undefined
-          }
-        });
+        // El User es global — solo crear si no existe
+        const existingUser = await prisma.user.findUnique({ where: { matricula } });
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              matricula,
+              passwordHash: await bcrypt.hash(matricula, 10),
+              role: 'alumno',
+              firstName: nombre || undefined,
+              email: email || undefined
+            }
+          });
+        }
 
         imported++;
       } catch (e) {

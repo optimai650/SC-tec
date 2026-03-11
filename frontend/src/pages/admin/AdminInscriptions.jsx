@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods } from '../../services/admin';
 
 export default function AdminInscriptions() {
+  const navigate = useNavigate();
   const [inscriptions, setInscriptions] = useState([]);
   const [socios, setSocios] = useState([]);
   const [periods, setPeriods] = useState([]);
@@ -45,6 +47,7 @@ export default function AdminInscriptions() {
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 p-8">
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Inscripciones</h1>

@@ -1,7 +1,7 @@
 import api from './api';
 
 // Matrículas
-export const getMatriculas = () => api.get('/admin/matriculas').then(r => r.data);
+export const getMatriculas = (fairId) => api.get('/admin/matriculas', { params: fairId ? { fairId } : {} }).then(r => r.data);
 export const importMatriculas = (csv) => api.post('/admin/matriculas', { csv }).then(r => r.data);
 export const deleteMatricula = (id) => api.delete(`/admin/matriculas/${id}`).then(r => r.data);
 

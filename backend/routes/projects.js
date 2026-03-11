@@ -193,10 +193,17 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
       return res.status(403).json({ error: 'Sin permisos para este proyecto' });
     }
 
-    // Validar que matricula esté en PreregisteredMatricula
-    const preregistered = await prisma.preregisteredMatricula.findUnique({ where: { matricula } });
+    // Obtener feria activa y validar matrícula
+    const activeFair = await prisma.fair.findFirst({ where: { isActive: true } });
+    if (!activeFair) {
+      return res.status(400).json({ error: 'No hay una feria activa' });
+    }
+
+    const preregistered = await prisma.preregisteredMatricula.findFirst({
+      where: { matricula, fairId: activeFair.id }
+    });
     if (!preregistered) {
-      return res.status(400).json({ error: 'La matrícula no está registrada en el sistema' });
+      return res.status(400).json({ error: 'Esta matrícula no está registrada para la feria activa' });
     }
 
     // Validar que el alumno NO tenga inscripción activa
@@ -213,14 +220,6 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
     // Validar que el proyecto tenga cupos
     if (project.remainingSlots <= 0) {
       return res.status(400).json({ error: 'El proyecto no tiene cupos disponibles' });
-    }
-
-    // Prevenir códigos duplicados para la misma matrícula/proyecto
-    const existingCode = await prisma.inscriptionCode.findFirst({
-      where: { projectId: project.id, matricula, usedAt: null }
-    });
-    if (existingCode) {
-      return res.status(400).json({ error: 'Ya existe un código activo para esta matrícula en este proyecto' });
     }
 
     // Generar código único con manejo de fallo

@@ -24,10 +24,13 @@ model User {
 
 model PreregisteredMatricula {
   id         String   @id @default(cuid())
-  matricula  String   @unique
+  matricula  String
   nombre     String?
   email      String?
+  fairId     String
+  fair       Fair     @relation(fields: [fairId], references: [id])
   importedAt DateTime @default(now())
+  @@unique([matricula, fairId])
 }
 
 model SocioFormador {
@@ -50,11 +53,12 @@ model Period {
 }
 
 model Fair {
-  id        String       @id @default(cuid())
-  name      String
-  isActive  Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  periods   FairPeriod[]
+  id         String                   @id @default(cuid())
+  name       String
+  isActive   Boolean                  @default(false)
+  createdAt  DateTime                 @default(now())
+  periods    FairPeriod[]
+  matriculas PreregisteredMatricula[]
 }
 
 model FairPeriod {
@@ -92,8 +96,6 @@ model InscriptionCode {
   usedAt    DateTime?
   usedBy    String?
   createdAt DateTime  @default(now())
-
-  @@unique([projectId, matricula])
 }
 
 model Inscription {

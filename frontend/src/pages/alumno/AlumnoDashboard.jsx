@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../../components/layout/Navbar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -6,6 +7,7 @@ import Badge from '../../components/ui/Badge';
 import { getMyInscription, redeemCode, cancelMyInscription } from '../../services/inscriptions';
 
 export default function AlumnoDashboard() {
+  const navigate = useNavigate();
   const [inscription, setInscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [codeModal, setCodeModal] = useState(false);
@@ -65,7 +67,11 @@ export default function AlumnoDashboard() {
     <div className="min-h-screen bg-[#f8fafc]">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Mi Servicio Social</h1>
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">← Atrás</button>
+          <Link to="/" className="text-sm text-[#003087] hover:underline flex items-center gap-1">← Ver oferta de proyectos</Link>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 mt-2">Mi Servicio Social</h1>
 
         {inscription ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

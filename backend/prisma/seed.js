@@ -94,7 +94,11 @@ async function main() {
   for (let i = 0; i < matriculas.length; i++) {
     const m = matriculas[i];
     const nombre = `Alumno ${i + 1}`;
-    await prisma.preregisteredMatricula.upsert({ where: { matricula: m }, update: {}, create: { matricula: m, nombre } });
+    await prisma.preregisteredMatricula.upsert({
+      where: { matricula_fairId: { matricula: m, fairId: 'feria-1-2025' } },
+      update: {},
+      create: { matricula: m, nombre, fairId: 'feria-1-2025' }
+    });
     await prisma.user.upsert({
       where: { matricula: m },
       update: {},

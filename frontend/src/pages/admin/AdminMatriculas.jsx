@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
-import { getMatriculas, importMatriculas } from '../../services/admin';
+import { getMatriculas, importMatriculas, getFairs } from '../../services/admin';
 
 export default function AdminMatriculas() {
+  const navigate = useNavigate();
   const [matriculas, setMatriculas] = useState([]);
+  const [fairs, setFairs] = useState([]);
+  const [activeFair, setActiveFair] = useState(null);
+  const [selectedFairId, setSelectedFairId] = useState('all');
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [csv, setCsv] = useState('');
@@ -13,12 +18,27 @@ export default function AdminMatriculas() {
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef();
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    getMatriculas().then(setMatriculas).finally(() => setLoading(false));
+    try {
+      const [matData, fairsData] = await Promise.all([
+        getMatriculas(),
+        getFairs()
+      ]);
+      setMatriculas(matData.matriculas || matData);
+      setFairs(fairsData);
+      const active = fairsData.find(f => f.isActive);
+      setActiveFair(active || null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
+
+  const filteredMatriculas = selectedFairId === 'all'
+    ? matriculas
+    : matriculas.filter(m => m.fairId === selectedFairId);
 
   const previewCount = csv.split('\n').filter(l => l.trim()).length;
 
@@ -53,12 +73,37 @@ export default function AdminMatriculas() {
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 p-8">
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Matrículas</h1>
-            <p className="text-gray-500 text-sm">{matriculas.length} matrículas registradas</p>
+            <p className="text-gray-500 text-sm">{filteredMatriculas.length} matrículas {selectedFairId === 'all' ? 'en total' : 'en esta feria'}</p>
           </div>
           <Button onClick={() => setModalOpen(true)}>+ Importar matrículas</Button>
+        </div>
+
+        {/* Tabs por feria */}
+        <div className="flex gap-1 mb-6 border-b">
+          <button
+            onClick={() => setSelectedFairId('all')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              selectedFairId === 'all' ? 'border-[#003087] text-[#003087]' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Todas
+          </button>
+          {fairs.map(fair => (
+            <button
+              key={fair.id}
+              onClick={() => setSelectedFairId(fair.id)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1 ${
+                selectedFairId === fair.id ? 'border-[#003087] text-[#003087]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {fair.name}
+              {fair.isActive && <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />}
+            </button>
+          ))}
         </div>
 
         {loading ? (
@@ -73,24 +118,26 @@ export default function AdminMatriculas() {
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Matrícula</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Nombre</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Feria</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Importada</th>
                 </tr>
               </thead>
               <tbody>
-                {matriculas.map(m => (
+                {filteredMatriculas.map(m => (
                   <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono font-medium text-[#003087]">{m.matricula}</td>
                     <td className="px-4 py-3 text-gray-700">{m.nombre || '—'}</td>
                     <td className="px-4 py-3 text-gray-500">{m.email || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{m.fair?.name || '—'}</td>
                     <td className="px-4 py-3 text-gray-400">{new Date(m.importedAt).toLocaleDateString('es-MX')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {matriculas.length === 0 && (
+            {filteredMatriculas.length === 0 && (
               <div className="text-center py-16 text-gray-500">
                 <div className="text-5xl mb-4">🎓</div>
-                <p>No hay matrículas registradas. Importa desde un CSV.</p>
+                <p>No hay matrículas en esta selección. Importa desde un CSV.</p>
               </div>
             )}
           </div>
@@ -100,7 +147,18 @@ export default function AdminMatriculas() {
         <Modal isOpen={modalOpen} onClose={handleCloseModal} title="Importar matrículas" size="lg">
           {!importResult ? (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              {activeFair ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />
+                  Las matrículas se importarán a la feria activa: <strong>{activeFair.name}</strong>
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
+                  ⚠️ No hay una feria activa. Activa una feria antes de importar matrículas.
+                </div>
+              )}
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700">
                 <p className="font-medium mb-1">Formato CSV:</p>
                 <p>Una matrícula por línea. Opcional: nombre y email.</p>
                 <code className="block mt-2 bg-white border rounded p-2 font-mono text-xs">
@@ -132,7 +190,7 @@ export default function AdminMatriculas() {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleImport} loading={importing} disabled={!csv.trim()}>
+                <Button onClick={handleImport} loading={importing} disabled={!csv.trim() || !activeFair}>
                   Importar {previewCount > 0 ? `(${previewCount})` : ''}
                 </Button>
                 <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>

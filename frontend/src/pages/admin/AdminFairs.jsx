@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -9,6 +10,7 @@ import {
 } from '../../services/admin';
 
 export default function AdminFairs() {
+  const navigate = useNavigate();
   const [fairs, setFairs] = useState([]);
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +125,7 @@ export default function AdminFairs() {
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 p-8">
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Ferias y Periodos</h1>
 
         {/* Tabs */}
