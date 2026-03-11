@@ -1,36 +1,28 @@
-# Voluntarios App
+# Feria de Servicio Social — Tecnológico de Monterrey
 
-Plataforma web para conectar oportunidades de voluntariado con personas que quieren completar horas de servicio social.
+Plataforma web para gestionar la Feria de Servicio Social universitaria. Los socios formadores ofrecen proyectos y los alumnos se inscriben presencialmente mediante un sistema de códigos QR + códigos únicos de un solo uso.
 
 ## Estructura
 
 ```
-voluntarios-app/
+SC-tec/
 ├── frontend/   # React + Vite + Tailwind CSS
 ├── backend/    # Node.js + Express + Prisma + SQLite
 └── README.md
 ```
 
+---
+
 ## Correr en local
 
 ### 1. Backend
 
-Configura las variables de entorno:
 ```bash
 cd backend
 cp .env.example .env
-# Edita .env y agrega tu RESEND_API_KEY (obtener en https://resend.com)
-```
-
-Luego instala y levanta:
-```bash
-npm run setup
-# Instala dependencias, migra la BD y carga datos de prueba
-```
-
-Luego en otra terminal:
-
-```bash
+npm install
+npx prisma migrate dev --name init
+npx prisma db seed
 npm run dev
 # Corre en http://localhost:3001
 ```
@@ -50,46 +42,92 @@ Abre `http://localhost:5173` en tu navegador.
 
 ## Cuentas de prueba
 
-| Rol          | Email                    | Contraseña       |
-|--------------|--------------------------|------------------|
-| Super Admin  | admin@voluntarios.app    | Admin1234!       |
-| Org Admin    | org@cruzver.de           | Org1234!         |
-| Voluntario   | voluntario@test.com      | Voluntario1234!  |
+### Super Admin
+| Email | Contraseña |
+|-------|-----------|
+| admin@tec.mx | Admin1234! |
+
+### Socios Formadores
+| Email | Contraseña | Socio |
+|-------|-----------|-------|
+| admin@cruzroja.mx | Socio1234! | Cruz Roja Monterrey |
+| admin@bancoalimentos.mx | Socio1234! | Banco de Alimentos NL |
+
+### Alumnos (login con matrícula)
+| Matrícula | Contraseña |
+|-----------|-----------|
+| A01234567 | A01234567 |
+| A01234568 | A01234568 |
+| A01234569 | A01234569 |
+| A01234570 | A01234570 |
+| A01234571 | A01234571 |
+
+> La contraseña por defecto de cada alumno es su propia matrícula.
+> El superadmin puede cambiarla desde el panel.
+
+---
+
+## Roles
+
+- **Super Admin** — Control total: socios formadores, proyectos, ferias, periodos, matrículas, inscripciones
+- **Socio Admin** — Gestiona sus proyectos, ve alumnos inscritos y genera códigos de inscripción
+- **Alumno** — Inicia sesión con matrícula, ve su proyecto asignado y redime códigos QR
+
+---
+
+## Flujo de inscripción presencial
+
+1. La organización presiona **"Agregar alumno"** en su dashboard
+2. Ingresa la matrícula del alumno dos veces para confirmar
+3. El sistema valida que la matrícula esté preregistrada y que el alumno no tenga proyecto
+4. Se genera un **código de 8 caracteres** que la organización entrega en persona al alumno
+5. El alumno escanea el **código QR** del proyecto (URL: `/qr/:token`)
+6. Ingresa el código recibido → queda inscrito
+
+---
+
+## Ferias y Periodos
+
+Hay dos ferias por año:
+
+| Feria | Periodos |
+|-------|---------|
+| Feria 1 | Febrero-Junio, Intensivo de Invierno |
+| Feria 2 | Verano, Agosto-Diciembre |
+
+El superadmin controla cuál feria está activa. Solo se muestran los proyectos de los periodos de la feria activa.
+
+---
+
+## Importar matrículas preregistradas
+
+Desde el panel admin → **Matrículas**, pegar en el textarea o subir un `.csv`:
+
+```
+A01234567,Juan Pérez,juan@tec.mx
+A01234568,María García
+A01234569
+```
+
+Formato: `matricula,nombre,email` (nombre y email opcionales). Una por línea.
+
+Al importar se crean automáticamente los usuarios con contraseña = matrícula.
 
 ---
 
 ## Comandos útiles (backend)
 
 ```bash
-npm run db:migrate    # Corre migraciones de Prisma
-npm run db:seed       # Carga datos de prueba
-npm run db:studio     # Abre Prisma Studio (UI para ver la BD)
+npx prisma migrate dev    # Corre migraciones
+npx prisma db seed        # Carga datos de prueba
+npx prisma studio         # UI para ver la base de datos
 ```
 
 ---
 
-## Roles
-
-- **Super Admin** — Control total: organizaciones, oportunidades, registros
-- **Org Admin** — Gestiona su organización y sus oportunidades
-- **Voluntario** — Navega y se registra en oportunidades
-
-## Emails transaccionales
-
-La app usa **Resend** para enviar emails automáticamente:
-
-- **Bienvenida** — al voluntario cuando crea su cuenta
-- **Confirmación de registro** — al voluntario cuando se inscribe a una oportunidad (incluye título, organización, descripción, ubicación y fechas)
-- **Notificación a la organización** — cuando un voluntario se inscribe (incluye nombre, email, teléfono y comunidad del voluntario)
-
-Requiere `RESEND_API_KEY` en `.env`. Sin dominio propio solo se puede enviar a emails verificados en el panel de Resend; con dominio verificado se envía a cualquier destinatario.
-
-## Validaciones
-
-- **Contraseña**: mínimo 8 caracteres, al menos una mayúscula y una minúscula
-- **Teléfono**: exactamente 10 dígitos (se guarda normalizado sin espacios ni guiones); único por cuenta
-
-## Notas
+## Notas técnicas
 
 - SQLite se guarda en `backend/prisma/dev.db` (ignorado por git)
-- Para producción: cambiar `DATABASE_URL` a PostgreSQL y verificar dominio en Resend
+- Los logos de socios se guardan como base64 en la base de datos
+- Para producción: cambiar `DATABASE_URL` a PostgreSQL en `.env`
+- JWT secret en variable `JWT_SECRET` — cambiar en producción
