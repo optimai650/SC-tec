@@ -50,6 +50,12 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
 
     // Transacción: crear inscripción, marcar código, decrementar cupos
     const result = await prisma.$transaction(async (tx) => {
+      // Verificar cupos disponibles dentro de la transacción (evita race condition)
+      const projectCheck = await tx.project.findUnique({ where: { id: inscCode.projectId } });
+      if (!projectCheck || projectCheck.remainingSlots <= 0) {
+        throw Object.assign(new Error('El proyecto ya no tiene cupos disponibles'), { statusCode: 400 });
+      }
+
       // Crear inscripción
       const inscription = await tx.inscription.create({
         data: {
