@@ -148,7 +148,10 @@ router.put('/:id', requireAuth, requireRole('superadmin', 'socio_admin'), async 
     if (location) data.location = location;
     if (status) data.status = status;
     if (totalSlots !== undefined) {
+      const currentProject = await prisma.project.findUnique({ where: { id: req.params.id } });
+      const inscribed = currentProject.totalSlots - currentProject.remainingSlots;
       data.totalSlots = parseInt(totalSlots);
+      data.remainingSlots = Math.max(0, parseInt(totalSlots) - inscribed);
     }
     if (socioFormadorId) data.socioFormadorId = socioFormadorId;
     if (periodId) data.periodId = periodId;

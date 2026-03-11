@@ -92,6 +92,8 @@ model InscriptionCode {
   usedAt    DateTime?
   usedBy    String?
   createdAt DateTime  @default(now())
+
+  @@unique([projectId, matricula])
 }
 
 model Inscription {

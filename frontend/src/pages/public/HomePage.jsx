@@ -73,6 +73,36 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Banner informativo */}
+      <div className="bg-[#e8f0fb] border-l-4 border-[#003087] mx-auto max-w-7xl mt-6 mx-4 rounded-lg px-6 py-5 flex gap-4 items-start shadow-sm">
+        <div className="flex-shrink-0 mt-0.5">
+          <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <h2 className="text-[#003087] font-bold text-base mb-1">¿Qué es esta página?</h2>
+          <p className="text-[#1a2e5a] text-sm leading-relaxed mb-3">
+            Aquí puedes explorar todos los proyectos disponibles para la <strong>Feria de Servicio Social del Tec de Monterrey</strong>.
+            Esta página es <strong>solo de consulta</strong> — no puedes inscribirte desde aquí.
+          </p>
+          <p className="text-[#1a2e5a] text-sm leading-relaxed mb-4">
+            Para participar, primero debes hacer tu <strong>pre-registro vía Microsoft Bookings</strong>. Una vez preregistrado, acude presencialmente a la feria y el equipo organizador te inscribirá en el proyecto de tu elección.
+          </p>
+          <a
+            href="https://outlook.office365.com/book/placeholder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#003087] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#00256e] transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Hacer pre-registro en Microsoft Bookings
+          </a>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex flex-wrap gap-3 mb-6">
