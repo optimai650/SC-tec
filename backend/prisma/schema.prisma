@@ -8,59 +8,100 @@ generator client {
 }
 
 model User {
-  id             String        @id @default(cuid())
-  email          String        @unique
-  passwordHash   String
-  role           String        // "superadmin" | "org_admin" | "volunteer"
-  emailVerified  Boolean       @default(false)
-  firstName      String?
-  lastName       String?
-  phone          String?
-  community      String?
-  createdAt      DateTime      @default(now())
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  organizationId String?
-  signups        Signup[]
+  id              String         @id @default(cuid())
+  matricula       String?        @unique
+  email           String?        @unique
+  passwordHash    String
+  role            String         // "superadmin" | "socio_admin" | "alumno"
+  firstName       String?
+  lastName        String?
+  phone           String?
+  createdAt       DateTime       @default(now())
+  socioFormador   SocioFormador? @relation(fields: [socioFormadorId], references: [id])
+  socioFormadorId String?
+  inscription     Inscription?
 }
 
-model Organization {
-  id            String        @id @default(cuid())
-  name          String
-  contactEmail  String
-  logo          String?
-  description   String
-  status        String        @default("Pending") // Pending | Approved | Rejected | Disabled
-  createdAt     DateTime      @default(now())
-  users         User[]
-  opportunities Opportunity[]
+model PreregisteredMatricula {
+  id         String   @id @default(cuid())
+  matricula  String   @unique
+  nombre     String?
+  email      String?
+  importedAt DateTime @default(now())
 }
 
-model Opportunity {
-  id             String       @id @default(cuid())
-  title          String
-  description    String
-  location       String
-  startDate      DateTime
-  endDate        DateTime
-  totalSlots     Int
-  remainingSlots Int
-  status         String       @default("Draft") // Draft | Published | Closed | Full
-  createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  organizationId String
-  signups        Signup[]
+model SocioFormador {
+  id           String    @id @default(cuid())
+  name         String
+  contactEmail String
+  logo         String?
+  description  String
+  status       String    @default("Activo")
+  createdAt    DateTime  @default(now())
+  users        User[]
+  projects     Project[]
 }
 
-model Signup {
-  id            String      @id @default(cuid())
-  volunteer     User        @relation(fields: [volunteerId], references: [id])
-  volunteerId   String
-  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
-  opportunityId String
-  status        String      @default("Registrado") // Registrado | Completado | Cancelado
-  createdAt     DateTime    @default(now())
+model Period {
+  id          String       @id @default(cuid())
+  name        String
+  fairPeriods FairPeriod[]
+  projects    Project[]
+}
 
-  @@unique([volunteerId, opportunityId])
+model Fair {
+  id        String       @id @default(cuid())
+  name      String
+  isActive  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  periods   FairPeriod[]
+}
+
+model FairPeriod {
+  fair     Fair   @relation(fields: [fairId], references: [id])
+  fairId   String
+  period   Period @relation(fields: [periodId], references: [id])
+  periodId String
+  @@id([fairId, periodId])
+}
+
+model Project {
+  id              String            @id @default(cuid())
+  title           String
+  description     String
+  location        String
+  totalSlots      Int
+  remainingSlots  Int
+  status          String            @default("Publicado")
+  qrToken         String?           @unique
+  createdAt       DateTime          @default(now())
+  socioFormador   SocioFormador     @relation(fields: [socioFormadorId], references: [id])
+  socioFormadorId String
+  period          Period            @relation(fields: [periodId], references: [id])
+  periodId        String
+  inscriptions    Inscription[]
+  codes           InscriptionCode[]
+}
+
+model InscriptionCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  project   Project   @relation(fields: [projectId], references: [id])
+  projectId String
+  matricula String
+  usedAt    DateTime?
+  usedBy    String?
+  createdAt DateTime  @default(now())
+}
+
+model Inscription {
+  id        String   @id @default(cuid())
+  alumno    User     @relation(fields: [alumnoId], references: [id])
+  alumnoId  String   @unique
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  status    String   @default("Inscrito")
+  createdAt DateTime @default(now())
 }
 
 model ActionLog {

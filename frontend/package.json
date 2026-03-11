@@ -1,7 +1,7 @@
 {
-  "name": "voluntarios-frontend",
+  "name": "feria-tec-frontend",
   "version": "1.0.0",
-  "description": "Frontend para la plataforma de voluntarios",
+  "description": "Frontend para la Feria de Servicio Social Tec de Monterrey",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "axios": "^1.6.7",
+    "qrcode.react": "^3.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3"

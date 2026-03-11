@@ -1,0 +1,300 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+
+const adminOnly = [requireAuth, requireRole('superadmin')];
+
+// ========== MATRÍCULAS ==========
+
+// GET /api/admin/matriculas
+router.get('/matriculas', ...adminOnly, async (req, res, next) => {
+  try {
+    const matriculas = await prisma.preregisteredMatricula.findMany({
+      orderBy: { importedAt: 'desc' }
+    });
+    res.json(matriculas);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/matriculas — importar CSV
+router.post('/matriculas', ...adminOnly, async (req, res, next) => {
+  try {
+    const { csv } = req.body;
+    if (!csv) return res.status(400).json({ error: 'CSV requerido' });
+
+    const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
+    let imported = 0;
+    const errors = [];
+
+    for (const line of lines) {
+      const parts = line.split(',').map(p => p.trim());
+      const matricula = parts[0];
+      const nombre = parts[1] || null;
+      const email = parts[2] || null;
+
+      if (!matricula) continue;
+
+      try {
+        await prisma.preregisteredMatricula.upsert({
+          where: { matricula },
+          update: { nombre, email },
+          create: { matricula, nombre, email }
+        });
+
+        await prisma.user.upsert({
+          where: { matricula },
+          update: {},
+          create: {
+            matricula,
+            passwordHash: await bcrypt.hash(matricula, 10),
+            role: 'alumno',
+            firstName: nombre || undefined,
+            email: email || undefined
+          }
+        });
+
+        imported++;
+      } catch (e) {
+        errors.push({ matricula, error: e.message });
+      }
+    }
+
+    res.json({ imported, total: lines.length, errors });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/matriculas/:id
+router.delete('/matriculas/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    await prisma.preregisteredMatricula.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ========== FERIAS ==========
+
+// GET /api/admin/fairs
+router.get('/fairs', ...adminOnly, async (req, res, next) => {
+  try {
+    const fairs = await prisma.fair.findMany({
+      include: {
+        periods: { include: { period: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(fairs);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/fairs
+router.post('/fairs', ...adminOnly, async (req, res, next) => {
+  try {
+    const { name, isActive } = req.body;
+    const fair = await prisma.fair.create({
+      data: { name, isActive: isActive || false }
+    });
+    res.status(201).json(fair);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/admin/fairs/:id
+router.put('/fairs/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    const fair = await prisma.fair.update({
+      where: { id: req.params.id },
+      data: { name }
+    });
+    res.json(fair);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/fairs/:id
+router.delete('/fairs/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    await prisma.fair.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/fairs/:id/activate
+router.post('/fairs/:id/activate', ...adminOnly, async (req, res, next) => {
+  try {
+    // Desactivar todas
+    await prisma.fair.updateMany({ data: { isActive: false } });
+    // Activar la seleccionada
+    const fair = await prisma.fair.update({
+      where: { id: req.params.id },
+      data: { isActive: true }
+    });
+    res.json(fair);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/fairs/:id/periods
+router.post('/fairs/:id/periods', ...adminOnly, async (req, res, next) => {
+  try {
+    const { periodIds } = req.body;
+    const fairId = req.params.id;
+
+    // Borrar asociaciones existentes
+    await prisma.fairPeriod.deleteMany({ where: { fairId } });
+
+    // Crear nuevas
+    if (periodIds && periodIds.length > 0) {
+      await prisma.fairPeriod.createMany({
+        data: periodIds.map(periodId => ({ fairId, periodId }))
+      });
+    }
+
+    const fair = await prisma.fair.findUnique({
+      where: { id: fairId },
+      include: { periods: { include: { period: true } } }
+    });
+    res.json(fair);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ========== PERIODOS ==========
+
+// GET /api/admin/periods
+router.get('/periods', ...adminOnly, async (req, res, next) => {
+  try {
+    const periods = await prisma.period.findMany({ orderBy: { name: 'asc' } });
+    res.json(periods);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/periods
+router.post('/periods', ...adminOnly, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    const period = await prisma.period.create({ data: { name } });
+    res.status(201).json(period);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/admin/periods/:id
+router.put('/periods/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    const period = await prisma.period.update({
+      where: { id: req.params.id },
+      data: { name }
+    });
+    res.json(period);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/periods/:id
+router.delete('/periods/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    await prisma.period.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ========== INSCRIPCIONES ==========
+
+// GET /api/admin/inscriptions
+router.get('/inscriptions', ...adminOnly, async (req, res, next) => {
+  try {
+    const inscriptions = await prisma.inscription.findMany({
+      include: {
+        alumno: { select: { id: true, matricula: true, firstName: true, lastName: true } },
+        project: { include: { socioFormador: true, period: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(inscriptions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/inscriptions/:id
+router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
+  try {
+    const inscription = await prisma.inscription.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.inscription.delete({ where: { id: req.params.id } });
+      const project = await tx.project.update({
+        where: { id: inscription.projectId },
+        data: { remainingSlots: { increment: 1 } }
+      });
+      if (project.status === 'Lleno') {
+        await tx.project.update({
+          where: { id: inscription.projectId },
+          data: { status: 'Publicado' }
+        });
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ========== ESTADÍSTICAS ==========
+
+// GET /api/admin/stats
+router.get('/stats', ...adminOnly, async (req, res, next) => {
+  try {
+    const [matriculasTotal, alumnosInscritos, proyectosPublicados, activeFair] = await Promise.all([
+      prisma.preregisteredMatricula.count(),
+      prisma.inscription.count(),
+      prisma.project.count({ where: { status: 'Publicado' } }),
+      prisma.fair.findFirst({ where: { isActive: true } })
+    ]);
+
+    const cuposDisponibles = await prisma.project.aggregate({
+      _sum: { remainingSlots: true }
+    });
+
+    res.json({
+      matriculasTotal,
+      alumnosInscritos,
+      proyectosPublicados,
+      cuposDisponibles: cuposDisponibles._sum.remainingSlots || 0,
+      feriaActiva: activeFair
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;

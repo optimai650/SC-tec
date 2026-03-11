@@ -1,51 +1,89 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Layout
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// Public Pages
-import Landing from './pages/public/Landing';
-import Opportunities from './pages/public/Opportunities';
-import OpportunityDetail from './pages/public/OpportunityDetail';
-
-// Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-
-// Volunteer Pages
-import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
-
-// Org Pages
-import OrgDashboard from './pages/org/OrgDashboard';
-import OrgOpportunities from './pages/org/OrgOpportunities';
-import OrgOpportunityForm from './pages/org/OrgOpportunityForm';
-import OrgVolunteers from './pages/org/OrgVolunteers';
-
-// Admin Pages
+// Pages
+import HomePage from './pages/public/HomePage';
+import LoginPage from './pages/auth/LoginPage';
+import AlumnoDashboard from './pages/alumno/AlumnoDashboard';
+import SocioDashboard from './pages/socio/SocioDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminOrganizations from './pages/admin/AdminOrganizations';
-import AdminOrgForm from './pages/admin/AdminOrgForm';
-import AdminOpportunities from './pages/admin/AdminOpportunities';
-import AdminVolunteers from './pages/admin/AdminVolunteers';
-import AdminSignups from './pages/admin/AdminSignups';
-import AdminOrgPanel from './pages/admin/AdminOrgPanel';
+import AdminSocios from './pages/admin/AdminSocios';
+import AdminProjects from './pages/admin/AdminProjects';
+import AdminFairs from './pages/admin/AdminFairs';
+import AdminMatriculas from './pages/admin/AdminMatriculas';
+import AdminInscriptions from './pages/admin/AdminInscriptions';
+import QRRedeemPage from './pages/qr/QRRedeemPage';
 
-// Shared Pages
-import ProfileSettings from './pages/shared/ProfileSettings';
+function ProtectedRoute({ children, roles }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-[#003087] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(user.role)) {
+    if (user.role === 'superadmin') return <Navigate to="/admin" replace />;
+    if (user.role === 'socio_admin') return <Navigate to="/socio" replace />;
+    return <Navigate to="/alumno" replace />;
+  }
+  return children;
+}
 
-function Layout({ children }) {
+function AppRoutes() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/qr/:qrToken" element={<QRRedeemPage />} />
+
+      <Route path="/alumno" element={
+        <ProtectedRoute roles={['alumno']}>
+          <AlumnoDashboard />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/socio" element={
+        <ProtectedRoute roles={['socio_admin']}>
+          <SocioDashboard />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/socios" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminSocios />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/projects" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminProjects />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/fairs" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminFairs />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/matriculas" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminMatriculas />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/inscriptions" element={
+        <ProtectedRoute roles={['superadmin']}>
+          <AdminInscriptions />
+        </ProtectedRoute>
+      } />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
@@ -53,97 +91,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Layout><Landing /></Layout>} />
-          <Route path="/oportunidades" element={<Layout><Opportunities /></Layout>} />
-          <Route path="/oportunidades/:id" element={<Layout><OpportunityDetail /></Layout>} />
-
-          {/* Auth routes */}
-          <Route path="/login" element={<Layout><Login /></Layout>} />
-          <Route path="/registro" element={<Layout><Register /></Layout>} />
-
-          {/* Volunteer routes */}
-          <Route path="/mi-cuenta" element={
-            <ProtectedRoute allowedRoles={['volunteer']}>
-              <Layout><VolunteerDashboard /></Layout>
-            </ProtectedRoute>
-          } />
-
-          {/* Org routes */}
-          <Route path="/org" element={
-            <ProtectedRoute allowedRoles={['org_admin']}>
-              <Layout><OrgDashboard /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/org/oportunidades" element={
-            <ProtectedRoute allowedRoles={['org_admin']}>
-              <Layout><OrgOpportunities /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/org/oportunidades/nueva" element={
-            <ProtectedRoute allowedRoles={['org_admin']}>
-              <Layout><OrgOpportunityForm /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/org/oportunidades/:id/editar" element={
-            <ProtectedRoute allowedRoles={['org_admin']}>
-              <Layout><OrgOpportunityForm /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/org/oportunidades/:id/voluntarios" element={
-            <ProtectedRoute allowedRoles={['org_admin']}>
-              <Layout><OrgVolunteers /></Layout>
-            </ProtectedRoute>
-          } />
-
-          {/* Admin routes */}
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminDashboard /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/organizaciones" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminOrganizations /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/organizaciones/nueva" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminOrgForm /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/oportunidades" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminOpportunities /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/voluntarios" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminVolunteers /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/registros" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminSignups /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/organizaciones/:orgId/panel" element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <Layout><AdminOrgPanel /></Layout>
-            </ProtectedRoute>
-          } />
-
-          {/* Profile (any authenticated role) */}
-          <Route path="/perfil/configuracion" element={
-            <ProtectedRoute allowedRoles={['superadmin', 'org_admin', 'volunteer']}>
-              <Layout><ProfileSettings /></Layout>
-            </ProtectedRoute>
-          } />
-
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
   );

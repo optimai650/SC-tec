@@ -1,137 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { adminAPI } from '../../services/api';
-import BackButton from '../../components/BackButton';
+import { useState, useEffect } from 'react';
+import Sidebar from '../../components/layout/Sidebar';
+import { getStats } from '../../services/admin';
+
+function StatCard({ label, value, icon, color = 'blue' }) {
+  const colors = {
+    blue: 'bg-blue-50 text-[#003087]',
+    green: 'bg-green-50 text-green-700',
+    yellow: 'bg-yellow-50 text-yellow-700',
+    purple: 'bg-purple-50 text-purple-700',
+  };
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 mb-1">{label}</p>
+          <p className="text-3xl font-bold text-gray-900">{value ?? '—'}</p>
+        </div>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${colors[color]}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    adminAPI.getStats()
-      .then((res) => setStats(res.data))
-      .catch(() => setError('No se pudieron cargar las estadisticas.'))
+    getStats()
+      .then(setStats)
       .finally(() => setLoading(false));
   }, []);
 
-  const cards = [
-    {
-      label: 'Organizaciones',
-      value: stats?.totalOrgs ?? '-',
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-      icon: '🏢',
-      link: '/admin/organizaciones',
-      linkLabel: 'Gestionar',
-    },
-    {
-      label: 'Oportunidades',
-      value: stats?.totalOpportunities ?? '-',
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-      icon: '📋',
-      link: '/admin/oportunidades',
-      linkLabel: 'Ver todas',
-    },
-    {
-      label: 'Registros activos',
-      value: stats?.totalSignups ?? '-',
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      icon: '✅',
-      link: '/admin/registros',
-      linkLabel: 'Ver detalle',
-    },
-    {
-      label: 'Voluntarios',
-      value: stats?.totalUsers ?? '-',
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-      icon: '👥',
-      link: '/admin/voluntarios',
-      linkLabel: 'Ver detalle',
-    },
-  ];
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <BackButton />
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de administración</h1>
-        <p className="text-gray-500">Bienvenido al panel de control de Voluntariado Maguen David.</p>
-      </div>
+    <div className="flex min-h-screen bg-[#f8fafc]">
+      <Sidebar />
+      <main className="flex-1 p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-500 mb-8">Resumen general de la Feria de Servicio Social</p>
 
-      {error && (
-        <div className="mb-6 bg-red-50 text-red-700 border border-red-200 rounded-lg p-4 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Stats */}
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {cards.map((card) => (
-            <div key={card.label} className="card hover:shadow-md transition-shadow">
-              <div className={`w-12 h-12 ${card.bg} rounded-xl flex items-center justify-center text-2xl mb-4`}>
-                {card.icon}
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="animate-spin w-8 h-8 border-4 border-[#003087] border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <>
+            {stats?.feriaActiva && (
+              <div className="bg-gradient-to-r from-[#003087] to-[#0051a8] text-white rounded-xl p-5 mb-8 flex items-center gap-3">
+                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                <div>
+                  <p className="text-blue-200 text-sm">Feria activa</p>
+                  <p className="text-xl font-bold">{stats.feriaActiva.name}</p>
+                </div>
               </div>
-              <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
-              <div className="text-sm text-gray-500 mb-4">{card.label}</div>
-              <Link to={card.link} className="text-xs text-indigo-600 font-semibold hover:text-indigo-800">
-                {card.linkLabel} →
-              </Link>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard label="Matrículas registradas" value={stats?.matriculasTotal} icon="🎓" color="blue" />
+              <StatCard label="Alumnos inscritos" value={stats?.alumnosInscritos} icon="✅" color="green" />
+              <StatCard label="Proyectos publicados" value={stats?.proyectosPublicados} icon="📋" color="purple" />
+              <StatCard label="Cupos disponibles" value={stats?.cuposDisponibles} icon="💺" color="yellow" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Quick actions */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Acciones rápidas</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link to="/admin/organizaciones/nueva" className="card hover:shadow-md transition-shadow group">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-xl mr-4 group-hover:bg-indigo-600 transition-colors">
-                🏢
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Crear organización</h3>
-                <p className="text-sm text-gray-500">Registrar nueva organización y admin</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link to="/admin/organizaciones" className="card hover:shadow-md transition-shadow group">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-xl mr-4 group-hover:bg-green-600 transition-colors">
-                ✓
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Aprobar organizaciones</h3>
-                <p className="text-sm text-gray-500">Revisar solicitudes pendientes</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link to="/admin/oportunidades" className="card hover:shadow-md transition-shadow group">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-xl mr-4 group-hover:bg-blue-600 transition-colors">
-                📋
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Ver oportunidades</h3>
-                <p className="text-sm text-gray-500">Todas las oportunidades de la plataforma</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }
