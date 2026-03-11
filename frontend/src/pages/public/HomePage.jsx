@@ -103,7 +103,7 @@ export default function HomePage() {
             </div>
             <div className="flex-shrink-0 flex items-center md:items-start md:mt-1">
               <a
-                href="https://outlook.office365.com/book/placeholder"
+                href="https://outlook.office365.com/book/FeriaServicioSocialTec@itesm.mx/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#003087] hover:bg-[#00256e] text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md whitespace-nowrap"
