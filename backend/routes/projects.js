@@ -180,6 +180,16 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
     const { matricula } = req.body;
     if (!matricula) return res.status(400).json({ error: 'Matrícula requerida' });
 
+    // Obtener proyecto
+    const project = await prisma.project.findUnique({ where: { id: req.params.id } });
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+
+    // Verificar ownership PRIMERO (antes de consultar matricula o inscripciones)
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (req.user.socioFormadorId !== project.socioFormadorId && user.socioFormadorId !== project.socioFormadorId) {
+      return res.status(403).json({ error: 'Sin permisos para este proyecto' });
+    }
+
     // Validar que matricula esté en PreregisteredMatricula
     const preregistered = await prisma.preregisteredMatricula.findUnique({ where: { matricula } });
     if (!preregistered) {
@@ -198,27 +208,28 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
     }
 
     // Validar que el proyecto tenga cupos
-    const project = await prisma.project.findUnique({ where: { id: req.params.id } });
-    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
     if (project.remainingSlots <= 0) {
       return res.status(400).json({ error: 'El proyecto no tiene cupos disponibles' });
     }
 
-    // Verificar que el socio_admin pertenece a este proyecto
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (project.socioFormadorId !== user.socioFormadorId) {
-      return res.status(403).json({ error: 'Sin permisos para este proyecto' });
+    // Prevenir códigos duplicados para la misma matrícula/proyecto
+    const existingCode = await prisma.inscriptionCode.findFirst({
+      where: { projectId: project.id, matricula, usedAt: null }
+    });
+    if (existingCode) {
+      return res.status(400).json({ error: 'Ya existe un código activo para esta matrícula en este proyecto' });
     }
 
-    // Generar código único
+    // Generar código único con manejo de fallo
     let code;
     let tries = 0;
     do {
       code = generateCode(8);
+      tries++;
+      if (tries >= 10) return res.status(500).json({ error: 'No se pudo generar un código único, intenta de nuevo' });
       const existing = await prisma.inscriptionCode.findUnique({ where: { code } });
       if (!existing) break;
-      tries++;
-    } while (tries < 10);
+    } while (true);
 
     await prisma.inscriptionCode.create({
       data: { code, projectId: project.id, matricula }

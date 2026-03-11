@@ -8,6 +8,7 @@ const sociosRoutes = require('./routes/socios');
 const projectsRoutes = require('./routes/projects');
 const inscriptionsRoutes = require('./routes/inscriptions');
 const adminRoutes = require('./routes/admin');
+const publicRoutes = require('./routes/public');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/api/socios', sociosRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/inscriptions', inscriptionsRoutes);

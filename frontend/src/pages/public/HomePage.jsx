@@ -27,15 +27,13 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [projectsData, fairsData] = await Promise.all([
+        const [projectsData, activeFairData] = await Promise.all([
           getPublicProjects(),
-          api.get('/admin/fairs').catch(() => ({ data: [] })).then(r => r.data || [])
+          api.get('/public/active-fair').catch(() => ({ data: null })).then(r => r.data || null)
         ]);
         setProjects(projectsData);
-        const fair = Array.isArray(fairsData) ? fairsData.find(f => f.isActive) : null;
-        setActiveFair(fair);
+        setActiveFair(activeFairData);
       } catch {
-        // silently handle if admin endpoint returns 401 for public
         try {
           const projectsData = await getPublicProjects();
           setProjects(projectsData);
