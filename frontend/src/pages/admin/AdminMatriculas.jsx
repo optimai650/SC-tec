@@ -25,10 +25,22 @@ export default function AdminMatriculas() {
         getMatriculas(),
         getFairs()
       ]);
-      setMatriculas(matData.matriculas || matData);
-      setFairs(fairsData);
-      const active = fairsData.find(f => f.isActive);
+      const fairs = fairsData || [];
+      setMatriculas(matData.matriculas || matData || []);
+      setFairs(fairs);
+      const active = fairs.find(f => f.isActive);
       setActiveFair(active || null);
+    } catch (err) {
+      console.error('Error cargando matrículas:', err);
+      // Si falla, intentar al menos cargar las ferias por separado
+      try {
+        const fairsData = await getFairs();
+        setFairs(fairsData || []);
+        const active = (fairsData || []).find(f => f.isActive);
+        setActiveFair(active || null);
+      } catch (e) {
+        // silencioso
+      }
     } finally {
       setLoading(false);
     }

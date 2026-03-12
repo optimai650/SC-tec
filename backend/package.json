@@ -9,7 +9,7 @@
     "db:migrate": "npx prisma migrate dev",
     "db:seed": "node prisma/seed.js",
     "db:studio": "npx prisma studio",
-    "setup": "npm install && npx prisma migrate dev --name init && node prisma/seed.js"
+    "setup": "npm install && npx prisma migrate reset --force && node prisma/seed.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

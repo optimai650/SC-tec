@@ -19,7 +19,9 @@ CREATE TABLE "PreregisteredMatricula" (
     "matricula" TEXT NOT NULL,
     "nombre" TEXT,
     "email" TEXT,
-    "importedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "fairId" TEXT NOT NULL,
+    "importedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PreregisteredMatricula_fairId_fkey" FOREIGN KEY ("fairId") REFERENCES "Fair" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -113,7 +115,7 @@ CREATE UNIQUE INDEX "User_matricula_key" ON "User"("matricula");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PreregisteredMatricula_matricula_key" ON "PreregisteredMatricula"("matricula");
+CREATE UNIQUE INDEX "PreregisteredMatricula_matricula_fairId_key" ON "PreregisteredMatricula"("matricula", "fairId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Project_qrToken_key" ON "Project"("qrToken");
