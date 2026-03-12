@@ -32,7 +32,6 @@ export default function AdminMatriculas() {
       setActiveFair(active || null);
     } catch (err) {
       console.error('Error cargando matrículas:', err);
-      // Si falla, intentar al menos cargar las ferias por separado
       try {
         const fairsData = await getFairs();
         setFairs(fairsData || []);
