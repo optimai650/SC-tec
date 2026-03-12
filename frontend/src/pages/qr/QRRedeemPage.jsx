@@ -46,10 +46,35 @@ export default function QRRedeemPage() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Code form
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState('');
+  // Profile + code form
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    personalEmail: '',
+    tecEmail: '',
+    career: '',
+    semester: '',
+    code: '',
+  });
+  const [formErrors, setFormErrors] = useState({});
   const [codeLoading, setCodeLoading] = useState(false);
+
+  // Pre-fill form when user logs in
+  useEffect(() => {
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+        personalEmail: user.personalEmail || '',
+        tecEmail: user.tecEmail || (user.matricula ? `${user.matricula}@tec.mx` : ''),
+        career: user.career || '',
+        semester: user.semester || '',
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     getProjectByToken(qrToken)
@@ -77,19 +102,43 @@ export default function QRRedeemPage() {
     }
   };
 
+  const handleFormChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) setFormErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!form.firstName.trim()) errors.firstName = 'Nombre requerido';
+    if (!form.lastName.trim()) errors.lastName = 'Apellido requerido';
+    if (!form.phone.trim()) errors.phone = 'Teléfono requerido';
+    if (!form.personalEmail.trim()) errors.personalEmail = 'Email personal requerido';
+    if (!form.tecEmail.trim()) errors.tecEmail = 'Email Tec requerido';
+    else if (!form.tecEmail.endsWith('@tec.mx')) errors.tecEmail = 'El email debe terminar en @tec.mx';
+    if (!form.career.trim()) errors.career = 'Carrera requerida';
+    if (!form.semester) errors.semester = 'Semestre requerido';
+    if (!form.code.trim()) errors.code = 'Código requerido';
+    return errors;
+  };
+
   const handleRedeem = async (e) => {
     e.preventDefault();
-    setCodeError('');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     setCodeLoading(true);
     try {
-      await redeemCode(code.trim().toUpperCase());
+      await redeemCode({ ...form, code: form.code.trim().toUpperCase() });
       setSuccess(true);
     } catch (err) {
       const msg = err.response?.data?.error || 'Código inválido';
-      if (msg.includes('ya tiene una inscripción')) {
-        setCodeError('Ya estás inscrito en un proyecto. Ve a tu dashboard para verlo.');
+      if (msg.includes('ya tiene una inscripción') || msg.includes('Ya tienes')) {
+        setFormErrors(prev => ({ ...prev, code: 'Ya estás inscrito en un proyecto. Ve a tu dashboard para verlo.' }));
       } else {
-        setCodeError(msg);
+        setFormErrors(prev => ({ ...prev, code: msg }));
       }
     } finally {
       setCodeLoading(false);
@@ -205,25 +254,124 @@ export default function QRRedeemPage() {
               </div>
             )}
 
-            {/* Code Section */}
+            {/* Profile + Code Section */}
             {(user?.role === 'alumno') && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="font-semibold text-gray-900 mb-1">Ingresar código</h2>
-                <p className="text-gray-500 text-sm mb-4">Ingresa el código que te dio el socio formador</p>
-                <form onSubmit={handleRedeem} className="space-y-3">
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={e => setCode(e.target.value.toUpperCase())}
-                    placeholder="XXXXXXXX"
-                    maxLength={8}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-center text-3xl font-mono tracking-widest"
-                  />
-                  {codeError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{codeError}</div>
-                  )}
-                  <Button type="submit" loading={codeLoading} disabled={!code || code.length < 4} className="w-full" size="lg">
-                    Inscribirme
+                <h2 className="font-semibold text-gray-900 mb-1">Datos de perfil e inscripción</h2>
+                <p className="text-gray-500 text-sm mb-5">Completa tu perfil e ingresa el código que te dio el socio formador</p>
+                <form onSubmit={handleRedeem} className="space-y-4">
+                  {/* Nombre */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={form.firstName}
+                        onChange={e => handleFormChange('firstName', e.target.value)}
+                        placeholder="Juan"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.firstName ? 'border-red-400' : 'border-gray-300'}`}
+                      />
+                      {formErrors.firstName && <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Apellido <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={form.lastName}
+                        onChange={e => handleFormChange('lastName', e.target.value)}
+                        placeholder="Pérez"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.lastName ? 'border-red-400' : 'border-gray-300'}`}
+                      />
+                      {formErrors.lastName && <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>}
+                    </div>
+                  </div>
+
+                  {/* Teléfono */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={e => handleFormChange('phone', e.target.value.replace(/\D/g, ''))}
+                      placeholder="8110001234"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.phone ? 'border-red-400' : 'border-gray-300'}`}
+                    />
+                    {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                  </div>
+
+                  {/* Email personal */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email personal <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      value={form.personalEmail}
+                      onChange={e => handleFormChange('personalEmail', e.target.value)}
+                      placeholder="juan@gmail.com"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.personalEmail ? 'border-red-400' : 'border-gray-300'}`}
+                    />
+                    {formErrors.personalEmail && <p className="text-red-500 text-xs mt-1">{formErrors.personalEmail}</p>}
+                  </div>
+
+                  {/* Email Tec */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Tec <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      value={form.tecEmail}
+                      onChange={e => handleFormChange('tecEmail', e.target.value)}
+                      placeholder="a01234567@tec.mx"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.tecEmail ? 'border-red-400' : 'border-gray-300'}`}
+                    />
+                    {formErrors.tecEmail && <p className="text-red-500 text-xs mt-1">{formErrors.tecEmail}</p>}
+                  </div>
+
+                  {/* Carrera + Semestre */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Carrera <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={form.career}
+                        onChange={e => handleFormChange('career', e.target.value)}
+                        placeholder="Ing. en Sistemas"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.career ? 'border-red-400' : 'border-gray-300'}`}
+                      />
+                      {formErrors.career && <p className="text-red-500 text-xs mt-1">{formErrors.career}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Semestre <span className="text-red-500">*</span></label>
+                      <select
+                        value={form.semester}
+                        onChange={e => handleFormChange('semester', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-sm ${formErrors.semester ? 'border-red-400' : 'border-gray-300'}`}
+                      >
+                        <option value="">Seleccionar</option>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i + 1} value={String(i + 1)}>{i + 1}° semestre</option>
+                        ))}
+                      </select>
+                      {formErrors.semester && <p className="text-red-500 text-xs mt-1">{formErrors.semester}</p>}
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Código de inscripción <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={form.code}
+                      onChange={e => handleFormChange('code', e.target.value.toUpperCase())}
+                      placeholder="XXXXXXXX"
+                      maxLength={8}
+                      className={`w-full px-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-center text-3xl font-mono tracking-widest ${formErrors.code ? 'border-red-400' : 'border-gray-300'}`}
+                    />
+                    {formErrors.code && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm mt-2">{formErrors.code}</div>
+                    )}
+                  </div>
+
+                  <Button type="submit" loading={codeLoading} className="w-full" size="lg">
+                    Confirmar inscripción
                   </Button>
                 </form>
               </div>

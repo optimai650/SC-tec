@@ -16,6 +16,10 @@ model User {
   firstName       String?
   lastName        String?
   phone           String?
+  personalEmail   String?        // email personal (gmail, etc.)
+  tecEmail        String?        // email institucional @tec.mx
+  career          String?        // carrera (Ing. en Sistemas, etc.)
+  semester        String?        // semestre actual
   createdAt       DateTime       @default(now())
   socioFormador   SocioFormador? @relation(fields: [socioFormadorId], references: [id])
   socioFormadorId String?

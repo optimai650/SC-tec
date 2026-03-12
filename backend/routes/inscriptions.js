@@ -24,7 +24,7 @@ router.get('/me', requireAuth, requireRole('alumno'), async (req, res, next) => 
 // POST /api/inscriptions/redeem — canjear código
 router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
-    const { code } = req.body;
+    const { code, firstName, lastName, phone, personalEmail, tecEmail, career, semester } = req.body;
     if (!code) return res.status(400).json({ error: 'Código requerido' });
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -48,13 +48,27 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       return res.status(400).json({ error: 'Ya tienes una inscripción activa' });
     }
 
-    // Transacción: crear inscripción, marcar código, decrementar cupos
+    // Transacción: actualizar perfil, crear inscripción, marcar código, decrementar cupos
     const result = await prisma.$transaction(async (tx) => {
       // Verificar cupos disponibles dentro de la transacción (evita race condition)
       const projectCheck = await tx.project.findUnique({ where: { id: inscCode.projectId } });
       if (!projectCheck || projectCheck.remainingSlots <= 0) {
         throw Object.assign(new Error('El proyecto ya no tiene cupos disponibles'), { statusCode: 400 });
       }
+
+      // Actualizar datos de perfil del alumno
+      await tx.user.update({
+        where: { id: req.user.id },
+        data: {
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          phone: phone || undefined,
+          personalEmail: personalEmail || undefined,
+          tecEmail: tecEmail || undefined,
+          career: career || undefined,
+          semester: semester || undefined,
+        }
+      });
 
       // Crear inscripción
       const inscription = await tx.inscription.create({
