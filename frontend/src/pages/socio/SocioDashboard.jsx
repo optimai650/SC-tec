@@ -71,24 +71,36 @@ function SocioProjectCard({ project }) {
           </div>
 
           {project.inscriptions?.length > 0 ? (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase border-b">
-                  <th className="pb-2">Matrícula</th>
-                  <th className="pb-2">Nombre</th>
-                  <th className="pb-2">Fecha</th>
-                </tr>
-              </thead>
-              <tbody>
-                {project.inscriptions.map(ins => (
-                  <tr key={ins.id} className="border-b last:border-0">
-                    <td className="py-2 font-mono text-gray-900">{ins.alumno?.matricula || '—'}</td>
-                    <td className="py-2 text-gray-700">{ins.alumno?.firstName} {ins.alumno?.lastName}</td>
-                    <td className="py-2 text-gray-500">{new Date(ins.createdAt).toLocaleDateString('es-MX')}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-500 uppercase border-b">
+                    <th className="pb-2 pr-3">Matrícula</th>
+                    <th className="pb-2 pr-3">Nombre</th>
+                    <th className="pb-2 pr-3">Teléfono</th>
+                    <th className="pb-2 pr-3">Email personal</th>
+                    <th className="pb-2 pr-3">Email Tec</th>
+                    <th className="pb-2 pr-3">Carrera</th>
+                    <th className="pb-2 pr-3">Semestre</th>
+                    <th className="pb-2">Fecha</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {project.inscriptions.map(ins => (
+                    <tr key={ins.id} className="border-b last:border-0">
+                      <td className="py-2 pr-3 font-mono text-gray-900">{ins.alumno?.matricula || '—'}</td>
+                      <td className="py-2 pr-3 text-gray-700 whitespace-nowrap">{ins.alumno?.firstName} {ins.alumno?.lastName}</td>
+                      <td className="py-2 pr-3 text-gray-600">{ins.alumno?.phone || '—'}</td>
+                      <td className="py-2 pr-3 text-gray-600">{ins.alumno?.personalEmail || '—'}</td>
+                      <td className="py-2 pr-3 text-gray-600">{ins.alumno?.tecEmail || '—'}</td>
+                      <td className="py-2 pr-3 text-gray-600">{ins.alumno?.career || '—'}</td>
+                      <td className="py-2 pr-3 text-gray-600">{ins.alumno?.semester ? `${ins.alumno.semester}°` : '—'}</td>
+                      <td className="py-2 text-gray-500 whitespace-nowrap">{new Date(ins.createdAt).toLocaleDateString('es-MX')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <p className="text-gray-500 text-sm py-4 text-center">No hay alumnos inscritos aún</p>
           )}

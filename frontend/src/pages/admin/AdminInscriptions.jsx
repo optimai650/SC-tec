@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import Modal from '../../components/ui/Modal';
 import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods } from '../../services/admin';
 
 export default function AdminInscriptions() {
@@ -14,6 +15,7 @@ export default function AdminInscriptions() {
   const [filterSocio, setFilterSocio] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [detailModal, setDetailModal] = useState(null); // inscription object
 
   const load = async () => {
     setLoading(true);
