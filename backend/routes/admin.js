@@ -289,23 +289,51 @@ router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
 // GET /api/admin/stats
 router.get('/stats', ...adminOnly, async (req, res, next) => {
   try {
-    const [matriculasTotal, alumnosInscritos, proyectosPublicados, activeFair] = await Promise.all([
-      prisma.preregisteredMatricula.count(),
-      prisma.inscription.count(),
-      prisma.project.count({ where: { status: 'Publicado' } }),
-      prisma.fair.findFirst({ where: { isActive: true } })
-    ]);
+    const { fairId } = req.query;
 
-    const cuposDisponibles = await prisma.project.aggregate({
-      _sum: { remainingSlots: true }
-    });
+    // Obtener la feria a consultar (si no se pasa fairId, usar la activa)
+    const fair = fairId
+      ? await prisma.fair.findUnique({ where: { id: fairId }, include: { periods: { include: { period: true } } } })
+      : await prisma.fair.findFirst({ where: { isActive: true }, include: { periods: { include: { period: true } } } });
+
+    // IDs de periodos de esa feria
+    const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
+
+    // Contar matrículas registradas para esa feria
+    const matriculasTotal = fair
+      ? await prisma.preregisteredMatricula.count({ where: { fairId: fair.id } })
+      : 0;
+
+    // Contar proyectos publicados en esa feria (por periodo)
+    const proyectosPublicados = periodIds.length > 0
+      ? await prisma.project.count({ where: { status: 'Publicado', periodId: { in: periodIds } } })
+      : 0;
+
+    // Cupos disponibles en esa feria
+    const cuposAgg = periodIds.length > 0
+      ? await prisma.project.aggregate({
+          where: { status: 'Publicado', periodId: { in: periodIds } },
+          _sum: { remainingSlots: true }
+        })
+      : { _sum: { remainingSlots: 0 } };
+
+    // Alumnos inscritos en proyectos de esa feria
+    const alumnosInscritos = periodIds.length > 0
+      ? await prisma.inscription.count({
+          where: { project: { periodId: { in: periodIds } } }
+        })
+      : 0;
+
+    // Todas las ferias para el selector
+    const allFairs = await prisma.fair.findMany({ orderBy: { createdAt: 'asc' } });
 
     res.json({
       matriculasTotal,
       alumnosInscritos,
       proyectosPublicados,
-      cuposDisponibles: cuposDisponibles._sum.remainingSlots || 0,
-      feriaActiva: activeFair
+      cuposDisponibles: cuposAgg._sum.remainingSlots || 0,
+      feriaActiva: fair,
+      allFairs,
     });
   } catch (err) {
     next(err);

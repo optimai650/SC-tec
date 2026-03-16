@@ -29,20 +29,52 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedFairId, setSelectedFairId] = useState('');
 
-  useEffect(() => {
-    getStats()
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async (fairId) => {
+    setLoading(true);
+    try {
+      const data = await getStats(fairId || undefined);
+      setStats(data);
+      // Si no hay fairId seleccionado, usar la feria activa como default
+      if (!fairId && data.feriaActiva) {
+        setSelectedFairId(data.feriaActiva.id);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleFairChange = (fairId) => {
+    setSelectedFairId(fairId);
+    load(fairId);
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 p-8">
         <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-500 mb-8">Resumen general de la Feria de Servicio Social</p>
+        
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          {stats?.allFairs?.length > 0 && (
+            <select
+              value={selectedFairId}
+              onChange={e => handleFairChange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]"
+            >
+              {stats.allFairs.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.name}{f.isActive ? ' ●' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        <p className="text-gray-500 mb-8">Estadísticas de la feria seleccionada</p>
 
         {loading ? (
           <div className="flex justify-center py-16">
@@ -52,9 +84,9 @@ export default function AdminDashboard() {
           <>
             {stats?.feriaActiva && (
               <div className="bg-gradient-to-r from-[#003087] to-[#0051a8] text-white rounded-xl p-5 mb-8 flex items-center gap-3">
-                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                <span className={`w-3 h-3 rounded-full ${stats.feriaActiva.isActive ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
                 <div>
-                  <p className="text-blue-200 text-sm">Feria activa</p>
+                  <p className="text-blue-200 text-sm">{stats.feriaActiva.isActive ? 'Feria activa' : 'Feria'}</p>
                   <p className="text-xl font-bold">{stats.feriaActiva.name}</p>
                 </div>
               </div>

@@ -31,4 +31,4 @@ export const deleteSocio = (id) => api.delete(`/socios/${id}`).then(r => r.data)
 export const createSocioAdminUser = (socioId, data) => api.post(`/socios/${socioId}/admin-user`, data).then(r => r.data);
 
 // Stats
-export const getStats = () => api.get('/admin/stats').then(r => r.data);
+export const getStats = (fairId) => api.get('/admin/stats', { params: fairId ? { fairId } : {} }).then(r => r.data);
