@@ -296,6 +296,11 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       ? await prisma.fair.findUnique({ where: { id: fairId }, include: { periods: { include: { period: true } } } })
       : await prisma.fair.findFirst({ where: { isActive: true }, include: { periods: { include: { period: true } } } });
 
+    // Si se pasó fairId explícito pero no existe, retornar 404
+    if (fairId && !fair) {
+      return res.status(404).json({ error: 'Feria no encontrada' });
+    }
+
     // IDs de periodos de esa feria
     const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
 

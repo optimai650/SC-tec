@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
 import { getStats } from '../../services/admin';
@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedFairId, setSelectedFairId] = useState('');
 
-  const load = async (fairId) => {
+  const load = useCallback(async (fairId) => {
     setLoading(true);
     try {
       const data = await getStats(fairId || undefined);
@@ -43,9 +43,9 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const handleFairChange = (fairId) => {
     setSelectedFairId(fairId);
