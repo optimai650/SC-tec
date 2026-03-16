@@ -115,7 +115,8 @@ export default function AdminInscriptions() {
                     <td className="px-4 py-3">
                       <Badge variant={ins.status === 'Inscrito' ? 'success' : 'default'}>{ins.status}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right flex gap-2 justify-end">
+                      <Button size="sm" variant="secondary" onClick={() => setDetailModal(ins)}>Ver</Button>
                       <Button size="sm" variant="danger" onClick={() => handleCancel(ins.id)}>Cancelar</Button>
                     </td>
                   </tr>
@@ -129,6 +130,59 @@ export default function AdminInscriptions() {
               </div>
             )}
           </div>
+        )}
+        {/* Detail Modal */}
+        {detailModal && (
+          <Modal isOpen={!!detailModal} onClose={() => setDetailModal(null)} title="Detalle del alumno">
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Matrícula</p>
+                  <p className="font-mono font-semibold">{detailModal.alumno?.matricula || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Estado</p>
+                  <Badge variant={detailModal.status === 'Inscrito' ? 'success' : 'default'}>{detailModal.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Nombre</p>
+                  <p>{detailModal.alumno?.firstName || '—'} {detailModal.alumno?.lastName || ''}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Teléfono</p>
+                  <p>{detailModal.alumno?.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Email personal</p>
+                  <p className="break-all">{detailModal.alumno?.personalEmail || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Email Tec</p>
+                  <p className="break-all">{detailModal.alumno?.tecEmail || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Carrera</p>
+                  <p>{detailModal.alumno?.career || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs uppercase font-medium">Semestre</p>
+                  <p>{detailModal.alumno?.semester ? `${detailModal.alumno.semester}° semestre` : '—'}</p>
+                </div>
+              </div>
+              <div className="border-t pt-3">
+                <p className="text-gray-500 text-xs uppercase font-medium">Proyecto</p>
+                <p className="font-medium">{detailModal.project?.title}</p>
+                <p className="text-gray-500 text-xs">{detailModal.project?.socioFormador?.name} · {detailModal.project?.period?.name}</p>
+              </div>
+              <div className="border-t pt-3">
+                <p className="text-gray-500 text-xs uppercase font-medium">Fecha de inscripción</p>
+                <p>{new Date(detailModal.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
+              </div>
+              <div className="pt-2">
+                <Button className="w-full" variant="secondary" onClick={() => setDetailModal(null)}>Cerrar</Button>
+              </div>
+            </div>
+          </Modal>
         )}
       </main>
     </div>

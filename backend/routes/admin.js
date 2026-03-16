@@ -245,7 +245,7 @@ router.get('/inscriptions', ...adminOnly, async (req, res, next) => {
   try {
     const inscriptions = await prisma.inscription.findMany({
       include: {
-        alumno: { select: { id: true, matricula: true, firstName: true, lastName: true } },
+        alumno: { select: { id: true, matricula: true, firstName: true, lastName: true, phone: true, personalEmail: true, tecEmail: true, career: true, semester: true } },
         project: { include: { socioFormador: true, period: true } }
       },
       orderBy: { createdAt: 'desc' }
