@@ -19,7 +19,7 @@ router.post('/login', async (req, res, next) => {
 
     if (matricula) {
       // Verificar que esté en PreregisteredMatricula
-      const preregistered = await prisma.preregisteredMatricula.findUnique({
+      const preregistered = await prisma.preregisteredMatricula.findFirst({
         where: { matricula }
       });
       if (!preregistered) {
