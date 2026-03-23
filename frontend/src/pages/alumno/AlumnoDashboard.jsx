@@ -4,17 +4,13 @@ import Navbar from '../../components/layout/Navbar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
-import { getMyInscription, redeemCode, cancelMyInscription } from '../../services/inscriptions';
+import { getMyInscription, cancelMyInscription } from '../../services/inscriptions';
 
 export default function AlumnoDashboard() {
   const navigate = useNavigate();
   const [inscription, setInscription] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [codeModal, setCodeModal] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [codeLoading, setCodeLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
@@ -22,22 +18,6 @@ export default function AlumnoDashboard() {
       .then(setInscription)
       .finally(() => setLoading(false));
   }, []);
-
-  const handleRedeem = async (e) => {
-    e.preventDefault();
-    setCodeError('');
-    setCodeLoading(true);
-    try {
-      const result = await redeemCode(code.trim().toUpperCase());
-      setInscription(result);
-      setCodeModal(false);
-      setCode('');
-    } catch (err) {
-      setCodeError(err.response?.data?.error || 'Código inválido');
-    } finally {
-      setCodeLoading(false);
-    }
-  };
 
   const handleCancel = async () => {
     setCancelLoading(true);
@@ -128,46 +108,10 @@ export default function AlumnoDashboard() {
           <div className="text-center py-16">
             <div className="text-6xl mb-6">🎓</div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No estás inscrito en ningún proyecto</h2>
-            <p className="text-gray-500 mb-8">Acude a la Feria de Servicio Social para inscribirte.</p>
-            <Button onClick={() => setCodeModal(true)}>
-              Tengo un código
-            </Button>
-          </div>
-        )}
-
-        {!inscription && (
-          <div className="mt-4 flex justify-center">
-            <Button variant="ghost" onClick={() => setCodeModal(true)} className="text-sm">
-              ¿Ya tienes un código? Ingrésalo aquí
-            </Button>
+            <p className="text-gray-500 mb-8">Acude a la Feria de Servicio Social para inscribirte escaneando el código QR del proyecto.</p>
           </div>
         )}
       </div>
-
-      {/* Modal: Ingresar código */}
-      <Modal isOpen={codeModal} onClose={() => { setCodeModal(false); setCode(''); setCodeError(''); }} title="Ingresar código de inscripción">
-        <form onSubmit={handleRedeem} className="space-y-4">
-          <p className="text-gray-600 text-sm">Ingresa el código que te proporcionó el socio formador en la feria.</p>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Código</label>
-            <input
-              type="text"
-              value={code}
-              onChange={e => setCode(e.target.value.toUpperCase())}
-              placeholder="Ej: ABC12345"
-              maxLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003087] text-center text-2xl font-mono tracking-widest uppercase"
-            />
-          </div>
-          {codeError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{codeError}</div>
-          )}
-          <div className="flex gap-3">
-            <Button type="submit" loading={codeLoading} disabled={!code || code.length < 4}>Canjear código</Button>
-            <Button variant="secondary" type="button" onClick={() => { setCodeModal(false); setCode(''); setCodeError(''); }}>Cancelar</Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Modal: Confirmar cancelación */}
       <Modal isOpen={cancelModal} onClose={() => setCancelModal(false)} title="¿Salir del proyecto?">
