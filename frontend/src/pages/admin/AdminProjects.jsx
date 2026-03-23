@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import { getAllProjects, createProject, updateProject, deleteProject } from '../../services/projects';
-import { getAllSocios, getPeriods } from '../../services/admin';
+import { getAllSocios, getPeriods, getFairs } from '../../services/admin';
 
 const emptyForm = { title: '', description: '', location: '', totalSlots: '', socioFormadorId: '', periodId: '', status: 'Publicado' };
 
@@ -15,6 +15,8 @@ export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
   const [socios, setSocios] = useState([]);
   const [periods, setPeriods] = useState([]);
+  const [fairs, setFairs] = useState([]);
+  const [selectedFairId, setSelectedFairId] = useState('');
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editProject, setEditProject] = useState(null);
@@ -25,10 +27,14 @@ export default function AdminProjects() {
 
   const load = async () => {
     setLoading(true);
-    const [p, s, per] = await Promise.all([getAllProjects(), getAllSocios(), getPeriods()]);
+    const [p, s, per, fs] = await Promise.all([getAllProjects(), getAllSocios(), getPeriods(), getFairs()]);
     setProjects(p);
     setSocios(s);
     setPeriods(per);
+    setFairs(fs);
+    // Seleccionar feria activa por defecto
+    const active = fs.find(f => f.isActive);
+    if (active) setSelectedFairId(active.id);
     setLoading(false);
   };
 
@@ -77,6 +83,15 @@ export default function AdminProjects() {
 
   const qrUrl = (token) => `${window.location.origin}/qr/${token}`;
 
+  // Filtrar proyectos por feria seleccionada
+  const filteredProjects = selectedFairId
+    ? (() => {
+        const fair = fairs.find(f => f.id === selectedFairId);
+        const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
+        return projects.filter(p => periodIds.includes(p.periodId));
+      })()
+    : projects;
+
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       <Sidebar />
@@ -84,7 +99,21 @@ export default function AdminProjects() {
         <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Proyectos</h1>
-          <Button onClick={() => openModal()}>+ Nuevo proyecto</Button>
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedFairId}
+              onChange={e => setSelectedFairId(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#003087] focus:border-[#003087]"
+            >
+              <option value="">Todas las ferias</option>
+              {fairs.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.name}{f.isActive ? ' (activa)' : ''}
+                </option>
+              ))}
+            </select>
+            <Button onClick={() => openModal()}>+ Nuevo proyecto</Button>
+          </div>
         </div>
 
         {loading ? (
@@ -105,7 +134,7 @@ export default function AdminProjects() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map(p => (
+                {filteredProjects.map(p => (
                   <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{p.title}</td>
                     <td className="px-4 py-3 text-gray-600">{p.socioFormador?.name}</td>
@@ -132,7 +161,7 @@ export default function AdminProjects() {
                 ))}
               </tbody>
             </table>
-            {projects.length === 0 && (
+            {filteredProjects.length === 0 && (
               <div className="text-center py-16 text-gray-500">
                 <div className="text-5xl mb-4">📋</div>
                 <p>No hay proyectos registrados</p>
