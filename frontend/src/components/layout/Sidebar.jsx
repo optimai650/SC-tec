@@ -24,9 +24,7 @@ export default function Sidebar() {
     <div className="w-64 min-h-screen bg-[#003087] flex flex-col">
       <div className="p-6 border-b border-blue-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-            <span className="text-[#003087] font-bold">T</span>
-          </div>
+          <img src="/tec-logo.svg" alt="Tec de Monterrey" className="h-10 w-10 object-contain" />
           <div>
             <p className="text-white font-bold text-sm leading-tight">Feria de Servicio Social</p>
             <p className="text-blue-300 text-xs">Panel Administrativo</p>

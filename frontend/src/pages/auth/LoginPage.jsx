@@ -42,9 +42,7 @@ export default function LoginPage() {
       {/* Header */}
       <div className="bg-[#003087] py-6 px-4">
         <div className="max-w-md mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-            <span className="text-[#003087] font-bold">T</span>
-          </div>
+          <img src="/tec-logo.svg" alt="Tec de Monterrey" className="h-10 w-10 object-contain" />
           <div>
             <p className="text-white font-bold">Feria de Servicio Social</p>
             <p className="text-blue-200 text-sm">Tecnológico de Monterrey</p>

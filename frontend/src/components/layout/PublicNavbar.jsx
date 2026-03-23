@@ -6,9 +6,7 @@ export default function PublicNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <span className="text-[#003087] font-bold text-sm">T</span>
-            </div>
+            <img src="/tec-logo.svg" alt="Tec de Monterrey" className="h-8 w-8 object-contain" />
             <div>
               <span className="text-white font-bold text-lg leading-none block">Feria de Servicio Social</span>
               <span className="text-blue-200 text-xs">Tecnológico de Monterrey</span>
