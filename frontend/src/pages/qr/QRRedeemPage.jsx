@@ -232,8 +232,8 @@ export default function QRRedeemPage() {
             <div className="flex flex-wrap gap-3">
               <span className="text-sm text-gray-500">📍 {project.location}</span>
               <Badge variant="primary">{project.period?.name}</Badge>
-              <Badge variant={project.remainingSlots > 0 ? 'success' : 'danger'}>
-                {project.remainingSlots} cupo{project.remainingSlots !== 1 ? 's' : ''} disponible{project.remainingSlots !== 1 ? 's' : ''}
+              <Badge variant={project.status === 'Lleno' ? 'danger' : 'success'}>
+                {project.status === 'Lleno' ? 'Sin cupos' : `${project.remainingSlots} cupo${project.remainingSlots !== 1 ? 's' : ''} disponible${project.remainingSlots !== 1 ? 's' : ''}`}
               </Badge>
             </div>
           </div>

@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = new PrismaClient();
 
 const adminOnly = [requireAuth, requireRole('superadmin')];
@@ -398,7 +399,6 @@ router.post('/projects/bulk', ...adminOnly, async (req, res, next) => {
         if (!socio) { errors.push(`Socio no encontrado: ${socioEmail}`); continue; }
         const period = await prisma.period.findFirst({ where: { name: { contains: periodName } } });
         if (!period) { errors.push(`Periodo no encontrado: ${periodName}`); continue; }
-        const crypto = require('crypto');
         await prisma.project.create({
           data: {
             title, description, location, totalSlots, remainingSlots: totalSlots,
