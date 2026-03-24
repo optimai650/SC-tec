@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import { getAllProjects, createProject, updateProject, deleteProject } from '../../services/projects';
-import { getAllSocios, getPeriods, getFairs } from '../../services/admin';
+import { getAllSocios, getPeriods, getFairs, bulkImportProjects } from '../../services/admin';
 
 const emptyForm = { title: '', description: '', location: '', totalSlots: '', socioFormadorId: '', periodId: '', status: 'Publicado' };
 
@@ -24,6 +24,12 @@ export default function AdminProjects() {
   const [saving, setSaving] = useState(false);
   const [qrModal, setQrModal] = useState(false);
   const [qrProject, setQrProject] = useState(null);
+
+  // Bulk import
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkCsv, setBulkCsv] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -81,6 +87,20 @@ export default function AdminProjects() {
     }
   };
 
+  const handleBulkImport = async () => {
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const result = await bulkImportProjects(bulkCsv);
+      setBulkResult(result);
+      if (result.imported > 0) load();
+    } catch (err) {
+      setBulkResult({ error: err.response?.data?.error || 'Error' });
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const qrUrl = (token) => `${window.location.origin}/qr/${token}`;
 
   // Filtrar proyectos por feria seleccionada
@@ -112,6 +132,7 @@ export default function AdminProjects() {
                 </option>
               ))}
             </select>
+            <Button variant="secondary" onClick={() => { setBulkModal(true); setBulkCsv(''); setBulkResult(null); }}>Importar CSV</Button>
             <Button onClick={() => openModal()}>+ Nuevo proyecto</Button>
           </div>
         </div>
@@ -224,6 +245,37 @@ export default function AdminProjects() {
                 Guardar
               </Button>
               <Button variant="secondary" onClick={() => setModal(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Bulk Import Modal */}
+        <Modal isOpen={bulkModal} onClose={() => setBulkModal(false)} title="Importar Proyectos (CSV)">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Formato: <code className="bg-gray-100 px-1 rounded text-xs">titulo,descripcion,ubicacion,cuposTotales,socioEmail,periodoNombre</code><br/>
+              Una fila por línea. El socioEmail y periodoNombre deben existir en el sistema.
+            </p>
+            <textarea
+              value={bulkCsv}
+              onChange={e => setBulkCsv(e.target.value)}
+              rows={8}
+              placeholder={"Brigadas de Salud,Apoyo en clínicas comunitarias,Monterrey,20,admin@cruzroja.mx,Ago-Dic 2025"}
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[#003087]"
+            />
+            {bulkResult && (
+              <div className={`text-sm p-3 rounded border ${bulkResult.error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                {bulkResult.error ? bulkResult.error : `✅ ${bulkResult.imported} de ${bulkResult.total} importados`}
+                {bulkResult.errors?.length > 0 && (
+                  <ul className="mt-2 text-xs text-red-600 list-disc list-inside">
+                    {bulkResult.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button onClick={handleBulkImport} loading={bulkLoading} disabled={!bulkCsv.trim()}>Importar</Button>
+              <Button variant="secondary" onClick={() => setBulkModal(false)}>Cerrar</Button>
             </div>
           </div>
         </Modal>

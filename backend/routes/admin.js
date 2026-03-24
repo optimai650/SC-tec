@@ -345,4 +345,74 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
   }
 });
 
+// ========== CARGA MASIVA ==========
+
+// POST /api/admin/socios/bulk — importar socios CSV
+// CSV formato: nombre,contactEmail,descripcion
+router.post('/socios/bulk', ...adminOnly, async (req, res, next) => {
+  try {
+    const { csv } = req.body;
+    if (!csv) return res.status(400).json({ error: 'CSV requerido' });
+    const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
+    let imported = 0;
+    const errors = [];
+    for (const line of lines) {
+      const [name, contactEmail, description] = line.split(',').map(s => s?.trim());
+      if (!name || !contactEmail || !description) {
+        errors.push(`Línea inválida: ${line}`);
+        continue;
+      }
+      try {
+        await prisma.socioFormador.upsert({
+          where: { contactEmail },
+          update: { name, description },
+          create: { name, contactEmail, description, status: 'Activo' }
+        });
+        imported++;
+      } catch (e) {
+        errors.push(`Error en ${name}: ${e.message}`);
+      }
+    }
+    res.json({ imported, total: lines.length, errors });
+  } catch (err) { next(err); }
+});
+
+// POST /api/admin/projects/bulk — importar proyectos CSV
+// CSV: titulo,descripcion,ubicacion,cuposTotales,socioEmail,periodoNombre
+router.post('/projects/bulk', ...adminOnly, async (req, res, next) => {
+  try {
+    const { csv } = req.body;
+    if (!csv) return res.status(400).json({ error: 'CSV requerido' });
+    const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
+    let imported = 0;
+    const errors = [];
+    for (const line of lines) {
+      const [title, description, location, slotsStr, socioEmail, periodName] = line.split(',').map(s => s?.trim());
+      const totalSlots = parseInt(slotsStr);
+      if (!title || !description || !location || isNaN(totalSlots) || !socioEmail || !periodName) {
+        errors.push(`Línea inválida: ${line}`);
+        continue;
+      }
+      try {
+        const socio = await prisma.socioFormador.findUnique({ where: { contactEmail: socioEmail } });
+        if (!socio) { errors.push(`Socio no encontrado: ${socioEmail}`); continue; }
+        const period = await prisma.period.findFirst({ where: { name: { contains: periodName } } });
+        if (!period) { errors.push(`Periodo no encontrado: ${periodName}`); continue; }
+        const crypto = require('crypto');
+        await prisma.project.create({
+          data: {
+            title, description, location, totalSlots, remainingSlots: totalSlots,
+            status: 'Publicado', socioFormadorId: socio.id, periodId: period.id,
+            qrToken: crypto.randomBytes(16).toString('hex')
+          }
+        });
+        imported++;
+      } catch (e) {
+        errors.push(`Error en ${title}: ${e.message}`);
+      }
+    }
+    res.json({ imported, total: lines.length, errors });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

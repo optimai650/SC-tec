@@ -39,6 +39,7 @@ export default function QRRedeemPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState('');
 
   // Auth form
   const [identifier, setIdentifier] = useState('');
@@ -78,7 +79,13 @@ export default function QRRedeemPage() {
 
   useEffect(() => {
     getProjectByToken(qrToken)
-      .then(setProject)
+      .then(project => {
+        setProject(project);
+        if (project.status === 'Lleno' || project.remainingSlots <= 0) {
+          setStep('full');
+          return;
+        }
+      })
       .catch(() => setError('Proyecto no encontrado'))
       .finally(() => setLoading(false));
   }, [qrToken]);
@@ -135,7 +142,9 @@ export default function QRRedeemPage() {
       setSuccess(true);
     } catch (err) {
       const msg = err.response?.data?.error || 'Código inválido';
-      if (msg.includes('ya tiene una inscripción') || msg.includes('Ya tienes')) {
+      if (msg.includes('cupos') || msg.includes('lleno')) {
+        setStep('full');
+      } else if (msg.includes('ya tiene una inscripción') || msg.includes('Ya tienes')) {
         setFormErrors(prev => ({ ...prev, code: 'Ya estás inscrito en un proyecto. Ve a tu dashboard para verlo.' }));
       } else {
         setFormErrors(prev => ({ ...prev, code: msg }));
@@ -144,6 +153,26 @@ export default function QRRedeemPage() {
       setCodeLoading(false);
     }
   };
+
+  if (step === 'full') {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+        <div className="bg-[#003087] py-4 px-4">
+          <div className="max-w-md mx-auto flex items-center gap-3">
+            <img src="/tec-logo.svg" alt="Tec" className="h-8 w-8 object-contain" />
+            <span className="text-white font-bold">Feria de Servicio Social</span>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-8 max-w-md w-full text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Proyecto sin cupo disponible</h2>
+            <p className="text-gray-500 text-sm">Este proyecto ya alcanzó su capacidad máxima. Acude a la feria para consultar otros proyectos disponibles.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

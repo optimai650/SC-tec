@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
-import { getAllSocios, createSocio, updateSocio, deleteSocio, createSocioAdminUser } from '../../services/admin';
+import { getAllSocios, createSocio, updateSocio, deleteSocio, createSocioAdminUser, bulkImportSocios } from '../../services/admin';
 
 const emptyForm = { name: '', contactEmail: '', description: '', logo: '', status: 'Activo' };
 
@@ -16,6 +16,12 @@ export default function AdminSocios() {
   const [editSocio, setEditSocio] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  // Bulk import modal
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkCsv, setBulkCsv] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   // Admin user modal
   const [adminModal, setAdminModal] = useState(false);
@@ -65,6 +71,20 @@ export default function AdminSocios() {
     }
   };
 
+  const handleBulkImport = async () => {
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const result = await bulkImportSocios(bulkCsv);
+      setBulkResult(result);
+      if (result.imported > 0) load();
+    } catch (err) {
+      setBulkResult({ error: err.response?.data?.error || 'Error' });
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -102,7 +122,10 @@ export default function AdminSocios() {
         <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">← Atrás</button>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Socios Formadores</h1>
-          <Button onClick={() => openModal()}>+ Nuevo socio</Button>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => { setBulkModal(true); setBulkCsv(''); setBulkResult(null); }}>Importar CSV</Button>
+            <Button onClick={() => openModal()}>+ Nuevo socio</Button>
+          </div>
         </div>
 
         {loading ? (
@@ -184,6 +207,37 @@ export default function AdminSocios() {
             <div className="flex gap-3">
               <Button onClick={handleSave} loading={saving} disabled={!form.name || !form.contactEmail}>Guardar</Button>
               <Button variant="secondary" onClick={() => setModal(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Bulk Import Modal */}
+        <Modal isOpen={bulkModal} onClose={() => setBulkModal(false)} title="Importar Socios Formadores (CSV)">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Formato: <code className="bg-gray-100 px-1 rounded text-xs">nombre,contactEmail,descripcion</code><br/>
+              Una fila por línea. Si el email ya existe, actualiza nombre y descripción.
+            </p>
+            <textarea
+              value={bulkCsv}
+              onChange={e => setBulkCsv(e.target.value)}
+              rows={8}
+              placeholder={"Cruz Roja MTY,admin@cruzroja.mx,Brigadas de salud\nBanco Alimentos,admin@banco.mx,Distribución de alimentos"}
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[#003087]"
+            />
+            {bulkResult && (
+              <div className={`text-sm p-3 rounded border ${bulkResult.error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                {bulkResult.error ? bulkResult.error : `✅ ${bulkResult.imported} de ${bulkResult.total} importados`}
+                {bulkResult.errors?.length > 0 && (
+                  <ul className="mt-2 text-xs text-red-600 list-disc list-inside">
+                    {bulkResult.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button onClick={handleBulkImport} loading={bulkLoading} disabled={!bulkCsv.trim()}>Importar</Button>
+              <Button variant="secondary" onClick={() => setBulkModal(false)}>Cerrar</Button>
             </div>
           </div>
         </Modal>

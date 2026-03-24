@@ -94,7 +94,12 @@ router.get('/my', requireAuth, requireRole('socio_admin'), async (req, res, next
         socioFormador: true,
         inscriptions: {
           include: {
-            alumno: { select: { id: true, matricula: true, firstName: true, lastName: true } }
+            alumno: {
+              select: {
+                id: true, matricula: true, firstName: true, lastName: true,
+                phone: true, personalEmail: true, tecEmail: true, career: true, semester: true
+              }
+            }
           }
         }
       },

@@ -88,10 +88,6 @@ export default function AlumnoDashboard() {
                   <p className="text-sm font-medium text-gray-900">{inscription.project?.location}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Cupos</p>
-                  <p className="text-sm font-medium text-gray-900">{inscription.project?.remainingSlots} / {inscription.project?.totalSlots} disponibles</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Estado</p>
                   <Badge variant="success">{inscription.status}</Badge>
                 </div>

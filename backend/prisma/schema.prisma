@@ -40,7 +40,7 @@ model PreregisteredMatricula {
 model SocioFormador {
   id           String    @id @default(cuid())
   name         String
-  contactEmail String
+  contactEmail String    @unique
   logo         String?
   description  String
   status       String    @default("Activo")

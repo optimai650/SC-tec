@@ -32,3 +32,7 @@ export const createSocioAdminUser = (socioId, data) => api.post(`/socios/${socio
 
 // Stats
 export const getStats = (fairId) => api.get('/admin/stats', { params: fairId ? { fairId } : {} }).then(r => r.data);
+
+// Bulk import
+export const bulkImportSocios = (csv) => api.post('/admin/socios/bulk', { csv }).then(r => r.data);
+export const bulkImportProjects = (csv) => api.post('/admin/projects/bulk', { csv }).then(r => r.data);
