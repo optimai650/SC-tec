@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
-import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods } from '../../services/admin';
+import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods, getFairs } from '../../services/admin';
 
 export default function AdminInscriptions() {
   const navigate = useNavigate();
@@ -12,6 +12,8 @@ export default function AdminInscriptions() {
   const [socios, setSocios] = useState([]);
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fairs, setFairs] = useState([]);
+  const [filterFair, setFilterFair] = useState('');
   const [filterSocio, setFilterSocio] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -19,10 +21,11 @@ export default function AdminInscriptions() {
 
   const load = async () => {
     setLoading(true);
-    const [insc, s, p] = await Promise.all([getAllInscriptions(), getAllSocios(), getPeriods()]);
+    const [insc, s, p, fs] = await Promise.all([getAllInscriptions(), getAllSocios(), getPeriods(), getFairs()]);
     setInscriptions(insc);
     setSocios(s);
     setPeriods(p);
+    setFairs(fs);
     setLoading(false);
   };
 
@@ -39,6 +42,11 @@ export default function AdminInscriptions() {
   };
 
   const filtered = inscriptions.filter(i => {
+    if (filterFair) {
+      const fair = fairs.find(f => f.id === filterFair);
+      const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
+      if (!periodIds.includes(i.project?.periodId)) return false;
+    }
     if (filterSocio && i.project?.socioFormadorId !== filterSocio) return false;
     if (filterPeriod && i.project?.periodId !== filterPeriod) return false;
     if (filterStatus && i.status !== filterStatus) return false;
@@ -59,6 +67,13 @@ export default function AdminInscriptions() {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-6">
+          <select value={filterFair} onChange={e => setFilterFair(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]">
+            <option value="">Todas las ferias</option>
+            {fairs.map(f => (
+              <option key={f.id} value={f.id}>{f.name}{f.isActive ? ' (activa)' : ''}</option>
+            ))}
+          </select>
           <select value={filterSocio} onChange={e => setFilterSocio(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]">
             <option value="">Todos los socios</option>
@@ -75,8 +90,8 @@ export default function AdminInscriptions() {
             <option>Inscrito</option>
             <option>Cancelado</option>
           </select>
-          {(filterSocio || filterPeriod || filterStatus) && (
-            <button onClick={() => { setFilterSocio(''); setFilterPeriod(''); setFilterStatus(''); }}
+          {(filterFair || filterSocio || filterPeriod || filterStatus) && (
+            <button onClick={() => { setFilterFair(''); setFilterSocio(''); setFilterPeriod(''); setFilterStatus(''); }}
               className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 underline">
               Limpiar
             </button>
