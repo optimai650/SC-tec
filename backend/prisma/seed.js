@@ -19,20 +19,12 @@ async function main() {
   });
 
   // ─── PERIODOS ─────────────────────────────────────────────────────────────
+  // Los periodos son fijos y se reutilizan cada año. El contexto del año lo da la feria.
   const periods = [
-    { id: 'period-feb-jun-2024',    name: 'Febrero-Junio 2024' },
-    { id: 'period-verano-2024',     name: 'Verano 2024' },
-    { id: 'period-ago-dic-2024',    name: 'Agosto-Diciembre 2024' },
-    { id: 'period-intensivo-2024',  name: 'Intensivo de Invierno 2024' },
-    { id: 'period-feb-jun-2025',    name: 'Febrero-Junio 2025' },
-    { id: 'period-verano-2025',     name: 'Verano 2025' },
-    { id: 'period-ago-dic-2025',    name: 'Agosto-Diciembre 2025' },
-    { id: 'period-intensivo-2025',  name: 'Intensivo de Invierno 2025' },
-    // compat con IDs viejos
-    { id: 'period-feb-jun',   name: 'Febrero-Junio' },
-    { id: 'period-intensivo', name: 'Intensivo de Invierno' },
-    { id: 'period-verano',    name: 'Verano' },
-    { id: 'period-ago-dic',   name: 'Agosto-Diciembre' },
+    { id: 'period-feb-jun',             name: 'Febrero-Junio' },
+    { id: 'period-intensivo-invierno',  name: 'Intensivo de Invierno' },
+    { id: 'period-intensivo-verano',    name: 'Intensivo de Verano' },
+    { id: 'period-ago-dic',             name: 'Agosto-Diciembre' },
   ];
   for (const p of periods) {
     await prisma.period.upsert({ where: { id: p.id }, update: {}, create: p });
@@ -50,19 +42,16 @@ async function main() {
   }
 
   // ─── FAIR PERIODS ─────────────────────────────────────────────────────────
+  // Feria 1 (primer semestre) → Feb-Jun + Intensivo de Invierno
+  // Feria 2 (segundo semestre) → Verano + Ago-Dic
   const fairPeriods = [
-    { fairId: 'feria-1-2024', periodId: 'period-feb-jun-2024' },
-    { fairId: 'feria-1-2024', periodId: 'period-verano-2024' },
-    { fairId: 'feria-2-2024', periodId: 'period-ago-dic-2024' },
-    { fairId: 'feria-2-2024', periodId: 'period-intensivo-2024' },
-    { fairId: 'feria-1-2025', periodId: 'period-feb-jun-2025' },
-    { fairId: 'feria-1-2025', periodId: 'period-verano-2025' },
-    { fairId: 'feria-1-2025', periodId: 'period-intensivo-2025' },
-    { fairId: 'feria-2-2025', periodId: 'period-ago-dic-2025' },
-    // compat
+    { fairId: 'feria-1-2024', periodId: 'period-feb-jun' },
+    { fairId: 'feria-1-2024', periodId: 'period-intensivo-invierno' },
+    { fairId: 'feria-2-2024', periodId: 'period-intensivo-verano' },
+    { fairId: 'feria-2-2024', periodId: 'period-ago-dic' },
     { fairId: 'feria-1-2025', periodId: 'period-feb-jun' },
-    { fairId: 'feria-1-2025', periodId: 'period-intensivo' },
-    { fairId: 'feria-2-2025', periodId: 'period-verano' },
+    { fairId: 'feria-1-2025', periodId: 'period-intensivo-invierno' },
+    { fairId: 'feria-2-2025', periodId: 'period-intensivo-verano' },
     { fairId: 'feria-2-2025', periodId: 'period-ago-dic' },
   ];
   for (const fp of fairPeriods) {
@@ -130,7 +119,7 @@ async function main() {
       location: 'Col. Independencia, MTY',
       totalSlots: 20, remainingSlots: 15, status: 'Publicado',
       qrToken: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
-      socioId: 'socio-cruz-roja', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-cruz-roja', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-primeros-auxilios',
@@ -139,7 +128,7 @@ async function main() {
       location: 'Sede Cruz Roja MTY, San Nicolás NL',
       totalSlots: 15, remainingSlots: 12, status: 'Publicado',
       qrToken: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7',
-      socioId: 'socio-cruz-roja', periodId: 'period-intensivo-2025',
+      socioId: 'socio-cruz-roja', periodId: 'period-intensivo-invierno',
     },
     {
       id: 'proj-donacion-sangre',
@@ -148,7 +137,7 @@ async function main() {
       location: 'Campus Monterrey y zona metropolitana',
       totalSlots: 25, remainingSlots: 25, status: 'Borrador',
       qrToken: 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
-      socioId: 'socio-cruz-roja', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-cruz-roja', periodId: 'period-ago-dic',
     },
     {
       id: 'proj-emergencias-2024',
@@ -157,7 +146,7 @@ async function main() {
       location: 'Zona Norte MTY',
       totalSlots: 20, remainingSlots: 0, status: 'Cerrado',
       qrToken: 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9',
-      socioId: 'socio-cruz-roja', periodId: 'period-ago-dic-2024',
+      socioId: 'socio-cruz-roja', periodId: 'period-ago-dic',
     },
 
     // ── Banco de Alimentos (4) ─────────────────────────────────────────────
@@ -168,7 +157,7 @@ async function main() {
       location: 'Bodega Central, Guadalupe NL',
       totalSlots: 30, remainingSlots: 25, status: 'Publicado',
       qrToken: 'e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0',
-      socioId: 'socio-banco-alimentos', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-banco-alimentos', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-campana-recoleccion',
@@ -177,7 +166,7 @@ async function main() {
       location: 'Varios centros comerciales MTY',
       totalSlots: 25, remainingSlots: 23, status: 'Publicado',
       qrToken: 'f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
-      socioId: 'socio-banco-alimentos', periodId: 'period-verano-2025',
+      socioId: 'socio-banco-alimentos', periodId: 'period-intensivo-verano',
     },
     {
       id: 'proj-huerto-comunitario',
@@ -186,7 +175,7 @@ async function main() {
       location: 'Col. Tierra Propia, Apodaca NL',
       totalSlots: 20, remainingSlots: 20, status: 'Publicado',
       qrToken: 'a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2',
-      socioId: 'socio-banco-alimentos', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-banco-alimentos', periodId: 'period-ago-dic',
     },
     {
       id: 'proj-alimentos-2024',
@@ -195,7 +184,7 @@ async function main() {
       location: 'Bodega Central y puntos de distribución NL',
       totalSlots: 50, remainingSlots: 0, status: 'Cerrado',
       qrToken: 'b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3',
-      socioId: 'socio-banco-alimentos', periodId: 'period-intensivo-2024',
+      socioId: 'socio-banco-alimentos', periodId: 'period-intensivo-invierno',
     },
 
     // ── Cáritas (2) ────────────────────────────────────────────────────────
@@ -206,7 +195,7 @@ async function main() {
       location: 'Parroquia San Pablo, MTY',
       totalSlots: 15, remainingSlots: 14, status: 'Publicado',
       qrToken: 'c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4',
-      socioId: 'socio-caritas', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-caritas', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-caritas-adultos',
@@ -215,7 +204,7 @@ async function main() {
       location: 'Zona Cumbres y San Bernabé, MTY',
       totalSlots: 20, remainingSlots: 20, status: 'Borrador',
       qrToken: 'd0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5',
-      socioId: 'socio-caritas', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-caritas', periodId: 'period-ago-dic',
     },
 
     // ── TECHO (4) ─────────────────────────────────────────────────────────
@@ -226,7 +215,7 @@ async function main() {
       location: 'Asentamiento El Mezquital, García NL',
       totalSlots: 40, remainingSlots: 37, status: 'Publicado',
       qrToken: 'e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6',
-      socioId: 'socio-techo', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-techo', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-techo-diagnostico',
@@ -235,7 +224,7 @@ async function main() {
       location: 'Municipios del AMM',
       totalSlots: 30, remainingSlots: 28, status: 'Publicado',
       qrToken: 'f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7',
-      socioId: 'socio-techo', periodId: 'period-intensivo-2025',
+      socioId: 'socio-techo', periodId: 'period-intensivo-invierno',
     },
     {
       id: 'proj-techo-educacion',
@@ -244,7 +233,7 @@ async function main() {
       location: 'Col. Tierra y Libertad, MTY',
       totalSlots: 25, remainingSlots: 25, status: 'Publicado',
       qrToken: 'a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8',
-      socioId: 'socio-techo', periodId: 'period-verano-2025',
+      socioId: 'socio-techo', periodId: 'period-intensivo-verano',
     },
     {
       id: 'proj-techo-2024',
@@ -253,7 +242,7 @@ async function main() {
       location: 'Zona Metropolitana NL',
       totalSlots: 60, remainingSlots: 0, status: 'Cerrado',
       qrToken: 'b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9',
-      socioId: 'socio-techo', periodId: 'period-ago-dic-2024',
+      socioId: 'socio-techo', periodId: 'period-ago-dic',
     },
 
     // ── Aldeas Infantiles (2) ──────────────────────────────────────────────
@@ -264,7 +253,7 @@ async function main() {
       location: 'Aldeas Infantiles SOS, Monterrey',
       totalSlots: 20, remainingSlots: 20, status: 'Publicado',
       qrToken: 'c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0',
-      socioId: 'socio-aldeas', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-aldeas', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-aldeas-recreacion',
@@ -273,7 +262,7 @@ async function main() {
       location: 'Aldeas Infantiles SOS, Monterrey',
       totalSlots: 15, remainingSlots: 13, status: 'Publicado',
       qrToken: 'd6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
-      socioId: 'socio-aldeas', periodId: 'period-verano-2025',
+      socioId: 'socio-aldeas', periodId: 'period-intensivo-verano',
     },
 
     // ── Fundación Merced (2) ───────────────────────────────────────────────
@@ -284,7 +273,7 @@ async function main() {
       location: 'Centro de Monterrey',
       totalSlots: 10, remainingSlots: 9, status: 'Publicado',
       qrToken: 'e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
-      socioId: 'socio-merced', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-merced', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-merced-emprendimiento',
@@ -293,7 +282,7 @@ async function main() {
       location: 'Fundación Merced, San Pedro NL',
       totalSlots: 12, remainingSlots: 12, status: 'Publicado',
       qrToken: 'f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3',
-      socioId: 'socio-merced', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-merced', periodId: 'period-ago-dic',
     },
 
     // ── Protección Civil (2) ───────────────────────────────────────────────
@@ -304,7 +293,7 @@ async function main() {
       location: 'Varias colonias, MTY',
       totalSlots: 50, remainingSlots: 47, status: 'Publicado',
       qrToken: 'a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4',
-      socioId: 'socio-proteccion-civil', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-proteccion-civil', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-pc-capacitacion',
@@ -313,7 +302,7 @@ async function main() {
       location: 'Municipios de Escobedo, Apodaca y Juárez NL',
       totalSlots: 35, remainingSlots: 33, status: 'Publicado',
       qrToken: 'b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5',
-      socioId: 'socio-proteccion-civil', periodId: 'period-intensivo-2025',
+      socioId: 'socio-proteccion-civil', periodId: 'period-intensivo-invierno',
     },
 
     // ── Banco de Ropa (2) ─────────────────────────────────────────────────
@@ -324,7 +313,7 @@ async function main() {
       location: 'Bodega Banco de Ropa, Guadalupe NL',
       totalSlots: 20, remainingSlots: 18, status: 'Publicado',
       qrToken: 'c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6',
-      socioId: 'socio-banco-ropa', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-banco-ropa', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-ropa-campana',
@@ -333,7 +322,7 @@ async function main() {
       location: 'Centro MTY y zona norte',
       totalSlots: 25, remainingSlots: 25, status: 'Publicado',
       qrToken: 'd2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7',
-      socioId: 'socio-banco-ropa', periodId: 'period-intensivo-2025',
+      socioId: 'socio-banco-ropa', periodId: 'period-intensivo-invierno',
     },
 
     // ── Colectivo Ambiental (3) ────────────────────────────────────────────
@@ -344,7 +333,7 @@ async function main() {
       location: 'Parque La Pastora, Guadalupe NL',
       totalSlots: 30, remainingSlots: 28, status: 'Publicado',
       qrToken: 'e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8',
-      socioId: 'socio-ambiental', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-ambiental', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-ambiental-limpieza',
@@ -353,7 +342,7 @@ async function main() {
       location: 'Río Santa Catarina, varios puntos MTY',
       totalSlots: 40, remainingSlots: 40, status: 'Publicado',
       qrToken: 'f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9',
-      socioId: 'socio-ambiental', periodId: 'period-verano-2025',
+      socioId: 'socio-ambiental', periodId: 'period-intensivo-verano',
     },
     {
       id: 'proj-ambiental-educacion',
@@ -362,7 +351,7 @@ async function main() {
       location: 'Escuelas primarias zona norte MTY',
       totalSlots: 20, remainingSlots: 20, status: 'Borrador',
       qrToken: 'a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0',
-      socioId: 'socio-ambiental', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-ambiental', periodId: 'period-ago-dic',
     },
 
     // ── CIJ (2) ───────────────────────────────────────────────────────────
@@ -373,7 +362,7 @@ async function main() {
       location: 'Secundarias zona poniente MTY',
       totalSlots: 15, remainingSlots: 14, status: 'Publicado',
       qrToken: 'b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1',
-      socioId: 'socio-cij', periodId: 'period-feb-jun-2025',
+      socioId: 'socio-cij', periodId: 'period-feb-jun',
     },
     {
       id: 'proj-cij-talleres',
@@ -382,7 +371,7 @@ async function main() {
       location: 'CIJ Monterrey Norte',
       totalSlots: 20, remainingSlots: 20, status: 'Publicado',
       qrToken: 'c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2',
-      socioId: 'socio-cij', periodId: 'period-ago-dic-2025',
+      socioId: 'socio-cij', periodId: 'period-ago-dic',
     },
 
     // ── Proyectos con IDs legacy del seed original ─────────────────────────
@@ -402,7 +391,7 @@ async function main() {
       location: 'Sede Cruz Roja MTY',
       totalSlots: 15, remainingSlots: 15, status: 'Cerrado',
       qrToken: '22334455667788990011bbccddeeffaa',
-      socioId: 'socio-cruz-roja', periodId: 'period-intensivo',
+      socioId: 'socio-cruz-roja', periodId: 'period-intensivo-invierno',
     },
     {
       id: 'proj-3',
@@ -420,7 +409,7 @@ async function main() {
       location: 'Varios centros comerciales MTY',
       totalSlots: 25, remainingSlots: 25, status: 'Cerrado',
       qrToken: '445566778899001122334455ffeeddcc',
-      socioId: 'socio-banco-alimentos', periodId: 'period-verano',
+      socioId: 'socio-banco-alimentos', periodId: 'period-intensivo-verano',
     },
   ];
 
@@ -669,7 +658,7 @@ async function main() {
   console.log('');
   console.log('✅ Seed completado exitosamente:');
   console.log('   👤  1  superadmin        (admin@tec.mx / Admin1234!)');
-  console.log('   📅  12 periodos');
+  console.log('   📅  4  periodos          (fijos, reutilizables)');
   console.log('   🏟️   4  ferias            (1 activa: feria-1-2025)');
   console.log('   🤝  10 socios formadores');
   console.log('   🔑  10 usuarios socio_admin (password: Socio1234!)');
