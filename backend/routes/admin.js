@@ -4,9 +4,81 @@ const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { verifyCertificateSignature } = require('../utils/certificateCrypto');
 const prisma = new PrismaClient();
 
 const adminOnly = [requireAuth, requireRole('superadmin')];
+
+function serializeCertificate(inscription) {
+  if (!inscription?.certificatePayload || !inscription?.certificateSignature) return null;
+  let payload = null;
+  try {
+    payload = JSON.parse(inscription.certificatePayload);
+  } catch {
+    payload = inscription.certificatePayload;
+  }
+  return {
+    payload,
+    signature: inscription.certificateSignature,
+    hash: inscription.certificateHash,
+    signedAt: inscription.certificateSignedAt,
+    verified: verifyCertificateSignature(inscription.certificatePayload, inscription.certificateSignature),
+    revokedAt: inscription.revokedAt,
+    revokedReason: inscription.revokedReason,
+  };
+}
+
+function csvEscape(value) {
+  if (value === null || value === undefined) return '';
+  const text = typeof value === 'string' ? value : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildCertificateCsv(inscriptions) {
+  const headers = [
+    'inscriptionId',
+    'matricula',
+    'alumnoNombre',
+    'alumnoEmail',
+    'projectId',
+    'projectTitle',
+    'socioFormador',
+    'periodo',
+    'status',
+    'createdAt',
+    'revokedAt',
+    'certificateSignedAt',
+    'certificateVerified',
+    'certificateHash',
+    'certificateSignature',
+    'certificatePayload',
+  ];
+
+  const rows = inscriptions.map((inscription) => {
+    const alumnoNombre = [inscription.alumno?.firstName, inscription.alumno?.lastName].filter(Boolean).join(' ');
+    const certificate = serializeCertificate(inscription);
+    return [
+      inscription.id,
+      inscription.alumno?.matricula,
+      alumnoNombre,
+      inscription.alumno?.personalEmail || inscription.alumno?.tecEmail || '',
+      inscription.project?.id,
+      inscription.project?.title,
+      inscription.project?.socioFormador?.name,
+      inscription.project?.period?.name,
+      inscription.status,
+      inscription.createdAt?.toISOString?.() || inscription.createdAt,
+      inscription.revokedAt?.toISOString?.() || '',
+      certificate?.signedAt?.toISOString?.() || '',
+      certificate?.verified ? 'true' : 'false',
+      certificate?.hash || '',
+      certificate?.signature || '',
+      certificate?.payload ? JSON.stringify(certificate.payload) : '',
+    ].map(csvEscape).join(',');
+  });
+
+  return [headers.map(csvEscape).join(','), ...rows].join('\n');
+}
 
 // ========== MATRÍCULAS ==========
 
@@ -251,7 +323,7 @@ router.get('/inscriptions', ...adminOnly, async (req, res, next) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(inscriptions);
+    res.json(inscriptions.map(inscription => ({ ...inscription, certificate: serializeCertificate(inscription) })));
   } catch (err) {
     next(err);
   }
@@ -264,9 +336,19 @@ router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
       where: { id: req.params.id }
     });
     if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
+    if (inscription.status === 'Cancelado') {
+      return res.status(400).json({ error: 'La inscripción ya está cancelada' });
+    }
 
     await prisma.$transaction(async (tx) => {
-      await tx.inscription.delete({ where: { id: req.params.id } });
+      await tx.inscription.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'Cancelado',
+          revokedAt: new Date(),
+          revokedReason: 'Cancelación solicitada por el administrador',
+        }
+      });
       const project = await tx.project.update({
         where: { id: inscription.projectId },
         data: { remainingSlots: { increment: 1 } }
@@ -280,6 +362,26 @@ router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
     });
 
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/inscriptions/export — CSV con firmas para auditoría
+router.get('/inscriptions/export', ...adminOnly, async (req, res, next) => {
+  try {
+    const inscriptions = await prisma.inscription.findMany({
+      include: {
+        alumno: { select: { matricula: true, firstName: true, lastName: true, personalEmail: true, tecEmail: true } },
+        project: { include: { socioFormador: true, period: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const csv = buildCertificateCsv(inscriptions);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="inscripciones_certificadas.csv"');
+    res.send(`\uFEFF${csv}`);
   } catch (err) {
     next(err);
   }

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/errorHandler');
+const { ensureKeyPair } = require('./utils/certificateCrypto');
 
 const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');
@@ -28,4 +29,13 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`🚀 Servidor en http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  // Inicializar claves criptográficas para certificados
+  try {
+    ensureKeyPair();
+    console.log('✅ Claves Ed25519 cargadas/generadas correctamente');
+  } catch (error) {
+    console.error('❌ Error al inicializar claves criptográficas:', error.message);
+  }
+});

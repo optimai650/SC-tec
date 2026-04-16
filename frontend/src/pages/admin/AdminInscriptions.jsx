@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
-import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods } from '../../services/admin';
+import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods, exportInscriptionsCsv } from '../../services/admin';
 
 export default function AdminInscriptions() {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ export default function AdminInscriptions() {
   const [filterPeriod, setFilterPeriod] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [detailModal, setDetailModal] = useState(null); // inscription object
+  const [csvLoading, setCsvLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -38,6 +39,25 @@ export default function AdminInscriptions() {
     }
   };
 
+  const handleDownloadCsv = async () => {
+    setCsvLoading(true);
+    try {
+      const blob = await exportInscriptionsCsv();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'inscripciones_certificadas.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al descargar CSV');
+    } finally {
+      setCsvLoading(false);
+    }
+  };
+
   const filtered = inscriptions.filter(i => {
     if (filterSocio && i.project?.socioFormadorId !== filterSocio) return false;
     if (filterPeriod && i.project?.periodId !== filterPeriod) return false;
@@ -55,6 +75,9 @@ export default function AdminInscriptions() {
             <h1 className="text-2xl font-bold text-gray-900">Inscripciones</h1>
             <p className="text-gray-500 text-sm">{filtered.length} de {inscriptions.length} inscripciones</p>
           </div>
+          <Button variant="secondary" onClick={handleDownloadCsv} loading={csvLoading}>
+            Descargar CSV con firmas
+          </Button>
         </div>
 
         {/* Filters */}
@@ -177,6 +200,24 @@ export default function AdminInscriptions() {
               <div className="border-t pt-3">
                 <p className="text-gray-500 text-xs uppercase font-medium">Fecha de inscripción</p>
                 <p>{new Date(detailModal.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
+              </div>
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-gray-500 text-xs uppercase font-medium">Certificado firmado</p>
+                {detailModal.certificate ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={detailModal.certificate.verified ? 'success' : 'danger'}>
+                        {detailModal.certificate.verified ? 'Firma válida' : 'Firma no válida'}
+                      </Badge>
+                      {detailModal.certificate.revokedAt && <Badge variant="warning">Cancelado</Badge>}
+                    </div>
+                    <p className="text-xs text-gray-500">Firmado: {detailModal.certificate.signedAt ? new Date(detailModal.certificate.signedAt).toLocaleString('es-MX') : '—'}</p>
+                    <p className="text-xs text-gray-500 break-all">Hash: {detailModal.certificate.hash || '—'}</p>
+                    <p className="text-xs text-gray-500 break-all">Firma: {detailModal.certificate.signature || '—'}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">Todavía no existe certificado.</p>
+                )}
               </div>
               <div className="pt-2">
                 <Button className="w-full" variant="secondary" onClick={() => setDetailModal(null)}>Cerrar</Button>

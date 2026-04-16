@@ -22,6 +22,7 @@ export const deletePeriod = (id) => api.delete(`/admin/periods/${id}`).then(r =>
 // Inscripciones admin
 export const getAllInscriptions = () => api.get('/admin/inscriptions').then(r => r.data);
 export const deleteInscription = (id) => api.delete(`/admin/inscriptions/${id}`).then(r => r.data);
+export const exportInscriptionsCsv = () => api.get('/admin/inscriptions/export', { responseType: 'blob' }).then(r => r.data);
 
 // Socios
 export const getAllSocios = () => api.get('/socios/all').then(r => r.data);

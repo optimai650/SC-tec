@@ -2,7 +2,40 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const {
+  createCertificatePayload,
+  stringifyCertificatePayload,
+  hashCertificatePayload,
+  signCertificatePayload,
+  verifyCertificateSignature,
+} = require('../utils/certificateCrypto');
 const prisma = new PrismaClient();
+
+function serializeCertificate(inscription) {
+  if (!inscription?.certificatePayload || !inscription?.certificateSignature) {
+    return null;
+  }
+
+  let payload = null;
+  try {
+    payload = JSON.parse(inscription.certificatePayload);
+  } catch {
+    payload = inscription.certificatePayload;
+  }
+
+  return {
+    payload,
+    signature: inscription.certificateSignature,
+    hash: inscription.certificateHash,
+    signedAt: inscription.certificateSignedAt,
+    verified: verifyCertificateSignature(
+      inscription.certificatePayload,
+      inscription.certificateSignature
+    ),
+    revokedAt: inscription.revokedAt,
+    revokedReason: inscription.revokedReason,
+  };
+}
 
 // GET /api/inscriptions/me — inscripción del alumno logueado
 router.get('/me', requireAuth, requireRole('alumno'), async (req, res, next) => {
@@ -15,7 +48,48 @@ router.get('/me', requireAuth, requireRole('alumno'), async (req, res, next) => 
         }
       }
     });
-    res.json(inscription || null);
+
+    if (!inscription) {
+      return res.json(null);
+    }
+
+    res.json({
+      ...inscription,
+      certificate: serializeCertificate(inscription),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/inscriptions/me/certificate — certificado firmado del alumno
+router.get('/me/certificate', requireAuth, requireRole('alumno'), async (req, res, next) => {
+  try {
+    const inscription = await prisma.inscription.findUnique({
+      where: { alumnoId: req.user.id },
+      include: {
+        project: {
+          include: { socioFormador: true, period: true }
+        }
+      }
+    });
+
+    if (!inscription) {
+      return res.status(404).json({ error: 'No tienes inscripción activa' });
+    }
+
+    const certificate = serializeCertificate(inscription);
+    if (!certificate) {
+      return res.status(404).json({ error: 'Todavía no existe un certificado para esta inscripción' });
+    }
+
+    res.json({
+      inscriptionId: inscription.id,
+      status: inscription.status,
+      project: inscription.project,
+      alumno: req.user,
+      certificate,
+    });
   } catch (err) {
     next(err);
   }
@@ -45,13 +119,16 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       where: { alumnoId: req.user.id }
     });
     if (existingInscription) {
-      return res.status(400).json({ error: 'Ya tienes una inscripción activa' });
+      return res.status(400).json({ error: 'Ya tienes una inscripción activa o cancelada registrada en el sistema' });
     }
 
-    // Transacción: actualizar perfil, crear inscripción, marcar código, decrementar cupos
+    // Transacción: actualizar perfil, crear inscripción, firmar certificado, marcar código, decrementar cupos
     const result = await prisma.$transaction(async (tx) => {
       // Verificar cupos disponibles dentro de la transacción (evita race condition)
-      const projectCheck = await tx.project.findUnique({ where: { id: inscCode.projectId } });
+      const projectCheck = await tx.project.findUnique({
+        where: { id: inscCode.projectId },
+        include: { socioFormador: true, period: true }
+      });
       if (!projectCheck || projectCheck.remainingSlots <= 0) {
         throw Object.assign(new Error('El proyecto ya no tiene cupos disponibles'), { statusCode: 400 });
       }
@@ -79,6 +156,28 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
         }
       });
 
+      const certificatePayloadObject = createCertificatePayload({
+        inscription,
+        alumno: {
+          id: user.id,
+          matricula: user.matricula,
+        },
+        project: projectCheck,
+      });
+      const certificatePayload = stringifyCertificatePayload(certificatePayloadObject);
+      const certificateSignature = signCertificatePayload(certificatePayload);
+      const certificateHash = hashCertificatePayload(certificatePayload);
+
+      const signedInscription = await tx.inscription.update({
+        where: { id: inscription.id },
+        data: {
+          certificatePayload,
+          certificateSignature,
+          certificateHash,
+          certificateSignedAt: new Date(),
+        }
+      });
+
       // Marcar código como usado
       await tx.inscriptionCode.update({
         where: { id: inscCode.id },
@@ -101,7 +200,7 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
         });
       }
 
-      return inscription;
+      return signedInscription;
     });
 
     const fullInscription = await prisma.inscription.findUnique({
@@ -111,7 +210,10 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       }
     });
 
-    res.json(fullInscription);
+    res.json({
+      ...fullInscription,
+      certificate: serializeCertificate(fullInscription),
+    });
   } catch (err) {
     next(err);
   }
@@ -124,10 +226,20 @@ router.delete('/me', requireAuth, requireRole('alumno'), async (req, res, next) 
       where: { alumnoId: req.user.id }
     });
     if (!inscription) return res.status(404).json({ error: 'No tienes inscripción activa' });
+    if (inscription.status === 'Cancelado') {
+      return res.status(400).json({ error: 'Tu inscripción ya está cancelada' });
+    }
 
     await prisma.$transaction(async (tx) => {
-      // Eliminar inscripción
-      await tx.inscription.delete({ where: { id: inscription.id } });
+      // Marcar inscripción como cancelada en vez de borrarla
+      await tx.inscription.update({
+        where: { id: inscription.id },
+        data: {
+          status: 'Cancelado',
+          revokedAt: new Date(),
+          revokedReason: 'Cancelación solicitada por el alumno',
+        }
+      });
 
       // Incrementar cupos
       const project = await tx.project.update({

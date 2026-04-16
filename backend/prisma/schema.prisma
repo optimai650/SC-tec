@@ -103,13 +103,19 @@ model InscriptionCode {
 }
 
 model Inscription {
-  id        String   @id @default(cuid())
-  alumno    User     @relation(fields: [alumnoId], references: [id])
-  alumnoId  String   @unique
-  project   Project  @relation(fields: [projectId], references: [id])
-  projectId String
-  status    String   @default("Inscrito")
-  createdAt DateTime @default(now())
+  id                  String   @id @default(cuid())
+  alumno              User     @relation(fields: [alumnoId], references: [id])
+  alumnoId            String   @unique
+  project             Project  @relation(fields: [projectId], references: [id])
+  projectId           String
+  status              String   @default("Inscrito")
+  certificatePayload  String?
+  certificateSignature String?
+  certificateHash     String?
+  certificateSignedAt DateTime?
+  revokedAt           DateTime?
+  revokedReason       String?
+  createdAt           DateTime @default(now())
 }
 
 model ActionLog {
