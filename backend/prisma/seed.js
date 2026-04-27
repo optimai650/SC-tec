@@ -1,9 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { initKeys, buildPayload, signPayload } = require('../utils/certificates');
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Iniciando seed...');
+  initKeys();
 
   // ─── SUPERADMIN ───────────────────────────────────────────────────────────
   await prisma.user.upsert({
@@ -525,7 +527,6 @@ async function main() {
   }
 
   // ─── INSCRIPCIONES ────────────────────────────────────────────────────────
-  // Cada alumno solo puede tener UNA inscripción (alumnoId @unique)
   const inscriptions = [
     // Brigadas de Salud → 5 inscripciones (totalSlots=20, remaining=15)
     { m: 'A01234560', projectId: 'proj-brigadas-salud' },
@@ -577,13 +578,52 @@ async function main() {
     { m: 'A01234593', projectId: 'proj-cij-prevencion' },
   ];
 
+  // Build lookup maps for certificate payload generation
+  const projectMap = Object.fromEntries(projects.map(p => [p.id, p]));
+  const socioMap = Object.fromEntries(socios.map(s => [s.id, s.name]));
+  const periodMap = Object.fromEntries(periods.map(p => [p.id, p.name]));
+  const alumnoNombreMap = Object.fromEntries(alumnosData.map(a => [a.m, `${a.fn} ${a.ln}`]));
+  const activeFairId = 'feria-1-2025';
+  const activeFairName = 'Feria SC 1 - 2025';
+
   for (const ins of inscriptions) {
     const alumnoId = alumnoUserIds[ins.m];
     if (!alumnoId) continue;
+
+    const inscId = `insc-${ins.m}-${ins.projectId}`;
+    const proj = projectMap[ins.projectId];
+    const createdAt = new Date('2025-02-01T14:00:00Z');
+
+    const payloadStr = buildPayload({
+      inscriptionId: inscId,
+      alumnoMatricula: ins.m,
+      alumnoNombre: alumnoNombreMap[ins.m],
+      projectId: ins.projectId,
+      projectTitle: proj.title,
+      socioFormador: socioMap[proj.socioId],
+      periodo: periodMap[proj.periodId],
+      feria: activeFairName,
+      fairId: activeFairId,
+      createdAt,
+    });
+    const { signature, hash, signedAt } = signPayload(payloadStr);
+
     await prisma.inscription.upsert({
-      where: { alumnoId },
+      where: { id: inscId },
       update: {},
-      create: { alumnoId, projectId: ins.projectId, status: 'Inscrito' },
+      create: {
+        id: inscId,
+        alumnoId,
+        projectId: ins.projectId,
+        periodId: proj.periodId,
+        fairId: activeFairId,
+        status: 'Inscrito',
+        createdAt,
+        certificatePayload: payloadStr,
+        certificateSignature: signature,
+        certificateHash: hash,
+        certificateSignedAt: signedAt,
+      },
     });
   }
 
