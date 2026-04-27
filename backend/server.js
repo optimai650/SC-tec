@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/errorHandler');
+const { initKeys } = require('./utils/certificates');
+
+initKeys();
 
 const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');

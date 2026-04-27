@@ -4,7 +4,14 @@ import Sidebar from '../../components/layout/Sidebar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
-import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods, getFairs } from '../../services/admin';
+import { getAllInscriptions, deleteInscription, getAllSocios, getPeriods, getFairs, exportInscriptionsCSV } from '../../services/admin';
+
+function CertBadge({ valid }) {
+  if (valid === null || valid === undefined) return <span className="text-xs text-gray-400">Sin cert.</span>;
+  return valid
+    ? <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Válida</span>
+    : <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">✗ Inválida</span>;
+}
 
 export default function AdminInscriptions() {
   const navigate = useNavigate();
@@ -17,36 +24,45 @@ export default function AdminInscriptions() {
   const [filterSocio, setFilterSocio] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [detailModal, setDetailModal] = useState(null); // inscription object
+  const [detailModal, setDetailModal] = useState(null);
+  const [certOpen, setCertOpen] = useState(false);
 
-  const load = async () => {
+  const load = async (fairId) => {
     setLoading(true);
-    const [insc, s, p, fs] = await Promise.all([getAllInscriptions(), getAllSocios(), getPeriods(), getFairs()]);
-    setInscriptions(insc);
-    setSocios(s);
-    setPeriods(p);
-    setFairs(fs);
-    setLoading(false);
+    try {
+      const [insc, s, p, fs] = await Promise.all([getAllInscriptions(fairId), getAllSocios(), getPeriods(), getFairs()]);
+      setInscriptions(insc);
+      setSocios(s);
+      setPeriods(p);
+      setFairs(fs);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al cargar inscripciones');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(filterFair || undefined); }, [filterFair]);
 
   const handleCancel = async (id) => {
-    if (!confirm('¿Cancelar esta inscripción?')) return;
+    if (!confirm('¿Cancelar esta inscripción? El comprobante se conservará.')) return;
     try {
       await deleteInscription(id);
-      load();
+      load(filterFair || undefined);
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
     }
   };
 
-  const filtered = inscriptions.filter(i => {
-    if (filterFair) {
-      const fair = fairs.find(f => f.id === filterFair);
-      const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
-      if (!periodIds.includes(i.project?.periodId)) return false;
+  const handleExportCSV = async () => {
+    try {
+      await exportInscriptionsCSV(filterFair || undefined);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al exportar CSV');
     }
+  };
+
+  const filtered = inscriptions.filter(i => {
     if (filterSocio && i.project?.socioFormadorId !== filterSocio) return false;
     if (filterPeriod && i.project?.periodId !== filterPeriod) return false;
     if (filterStatus && i.status !== filterStatus) return false;
@@ -63,6 +79,9 @@ export default function AdminInscriptions() {
             <h1 className="text-2xl font-bold text-gray-900">Inscripciones</h1>
             <p className="text-gray-500 text-sm">{filtered.length} de {inscriptions.length} inscripciones</p>
           </div>
+          <Button variant="secondary" onClick={handleExportCSV}>
+            ↓ Descargar CSV con firmas
+          </Button>
         </div>
 
         {/* Filters */}
@@ -113,12 +132,13 @@ export default function AdminInscriptions() {
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Periodo</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Firma</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(ins => (
-                  <tr key={ins.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={ins.id} className={`border-b last:border-0 hover:bg-gray-50 ${ins.revokedAt ? 'opacity-60' : ''}`}>
                     <td className="px-4 py-3">
                       <p className="font-mono text-gray-900">{ins.alumno?.matricula || '—'}</p>
                       <p className="text-gray-500 text-xs">{ins.alumno?.firstName} {ins.alumno?.lastName}</p>
@@ -130,9 +150,14 @@ export default function AdminInscriptions() {
                     <td className="px-4 py-3">
                       <Badge variant={ins.status === 'Inscrito' ? 'success' : 'default'}>{ins.status}</Badge>
                     </td>
+                    <td className="px-4 py-3">
+                      <CertBadge valid={ins.certificateValid} />
+                    </td>
                     <td className="px-4 py-3 text-right flex gap-2 justify-end">
-                      <Button size="sm" variant="secondary" onClick={() => setDetailModal(ins)}>Ver</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleCancel(ins.id)}>Cancelar</Button>
+                      <Button size="sm" variant="secondary" onClick={() => { setDetailModal(ins); setCertOpen(false); }}>Ver</Button>
+                      {!ins.revokedAt && (
+                        <Button size="sm" variant="danger" onClick={() => handleCancel(ins.id)}>Cancelar</Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -146,10 +171,11 @@ export default function AdminInscriptions() {
             )}
           </div>
         )}
+
         {/* Detail Modal */}
         {detailModal && (
           <Modal isOpen={!!detailModal} onClose={() => setDetailModal(null)} title="Detalle del alumno">
-            <div className="space-y-3 text-sm">
+            <div className="space-y-3 text-sm max-h-[80vh] overflow-y-auto pr-1">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-gray-500 text-xs uppercase font-medium">Matrícula</p>
@@ -184,15 +210,69 @@ export default function AdminInscriptions() {
                   <p>{detailModal.alumno?.semester ? `${detailModal.alumno.semester}° semestre` : '—'}</p>
                 </div>
               </div>
+
               <div className="border-t pt-3">
                 <p className="text-gray-500 text-xs uppercase font-medium">Proyecto</p>
                 <p className="font-medium">{detailModal.project?.title}</p>
                 <p className="text-gray-500 text-xs">{detailModal.project?.socioFormador?.name} · {detailModal.project?.period?.name}</p>
               </div>
+
               <div className="border-t pt-3">
                 <p className="text-gray-500 text-xs uppercase font-medium">Fecha de inscripción</p>
                 <p>{new Date(detailModal.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
               </div>
+
+              {detailModal.revokedAt && (
+                <div className="border-t pt-3">
+                  <p className="text-gray-500 text-xs uppercase font-medium">Cancelación</p>
+                  <p>{new Date(detailModal.revokedAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
+                  <p className="text-gray-500 text-xs">{detailModal.revokedReason}</p>
+                </div>
+              )}
+
+              {/* Comprobante firmado */}
+              <div className="border-t pt-3">
+                <button
+                  onClick={() => setCertOpen(o => !o)}
+                  className="text-sm text-[#003087] hover:underline font-medium flex items-center gap-1"
+                >
+                  {certOpen ? '▾' : '▸'} Comprobante firmado
+                </button>
+                {certOpen && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <CertBadge valid={detailModal.certificateValid} />
+                      {detailModal.revokedAt
+                        ? <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">Revocado</span>
+                        : <span className="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">Vigente</span>
+                      }
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-xs space-y-2">
+                      <div>
+                        <p className="text-gray-400 uppercase font-medium mb-0.5">Fecha de firma</p>
+                        <p className="font-mono">{detailModal.certificateSignedAt ? new Date(detailModal.certificateSignedAt).toLocaleString('es-MX') : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 uppercase font-medium mb-0.5">SHA-256 (huella)</p>
+                        <p className="font-mono break-all">{detailModal.certificateHash || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 uppercase font-medium mb-0.5">Firma Ed25519 (Base64)</p>
+                        <p className="font-mono break-all">{detailModal.certificateSignature || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 uppercase font-medium mb-0.5">Payload</p>
+                        <pre className="font-mono text-xs overflow-x-auto whitespace-pre-wrap break-all">
+                          {detailModal.certificatePayload
+                            ? (() => { try { return JSON.stringify(JSON.parse(detailModal.certificatePayload), null, 2); } catch { return detailModal.certificatePayload; } })()
+                            : '—'}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="pt-2">
                 <Button className="w-full" variant="secondary" onClick={() => setDetailModal(null)}>Cerrar</Button>
               </div>

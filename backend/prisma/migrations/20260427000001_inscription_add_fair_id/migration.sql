@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Inscription" ADD COLUMN "fairId" TEXT REFERENCES "Fair"("id") ON DELETE SET NULL ON UPDATE CASCADE;

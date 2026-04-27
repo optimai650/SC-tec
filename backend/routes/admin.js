@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { verifyWithHash } = require('../utils/certificates');
 const prisma = new PrismaClient();
 
 const adminOnly = [requireAuth, requireRole('superadmin')];
@@ -143,7 +144,11 @@ router.put('/fairs/:id', ...adminOnly, async (req, res, next) => {
 // DELETE /api/admin/fairs/:id
 router.delete('/fairs/:id', ...adminOnly, async (req, res, next) => {
   try {
-    await prisma.fair.delete({ where: { id: req.params.id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.fairPeriod.deleteMany({ where: { fairId: req.params.id } });
+      await tx.preregisteredMatricula.deleteMany({ where: { fairId: req.params.id } });
+      await tx.fair.delete({ where: { id: req.params.id } });
+    });
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -241,41 +246,95 @@ router.delete('/periods/:id', ...adminOnly, async (req, res, next) => {
 
 // ========== INSCRIPCIONES ==========
 
-// GET /api/admin/inscriptions
+// GET /api/admin/inscriptions?fairId=<id>
 router.get('/inscriptions', ...adminOnly, async (req, res, next) => {
   try {
+    const { fairId } = req.query;
+    const where = fairId ? { fairId } : {};
     const inscriptions = await prisma.inscription.findMany({
+      where,
       include: {
         alumno: { select: { id: true, matricula: true, firstName: true, lastName: true, phone: true, personalEmail: true, tecEmail: true, career: true, semester: true } },
         project: { include: { socioFormador: true, period: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(inscriptions);
+    const result = inscriptions.map(ins => ({
+      ...ins,
+      certificateValid: ins.certificatePayload && ins.certificateSignature
+        ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+        : null,
+    }));
+    res.json(result);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/admin/inscriptions/:id
+// GET /api/admin/inscriptions/export?fairId=<id> — CSV con firmas
+router.get('/inscriptions/export', ...adminOnly, async (req, res, next) => {
+  try {
+    const { fairId } = req.query;
+    const where = fairId ? { fairId } : {};
+    const inscriptions = await prisma.inscription.findMany({
+      where,
+      include: {
+        alumno: { select: { matricula: true, firstName: true, lastName: true } },
+        project: { include: { period: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const headers = ['id','matricula','nombre','proyecto','periodo','status','createdAt','revokedAt','certificateSignedAt','certificateVerified','certificateHash','certificateSignature','certificatePayload'];
+    const rows = inscriptions.map(ins => {
+      const verified = ins.certificatePayload && ins.certificateSignature
+        ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+        : '';
+      return [
+        ins.id,
+        ins.alumno?.matricula,
+        `${ins.alumno?.firstName || ''} ${ins.alumno?.lastName || ''}`.trim(),
+        ins.project?.title,
+        ins.project?.period?.name,
+        ins.status,
+        ins.createdAt?.toISOString(),
+        ins.revokedAt?.toISOString(),
+        ins.certificateSignedAt?.toISOString(),
+        verified,
+        ins.certificateHash,
+        ins.certificateSignature,
+        ins.certificatePayload,
+      ].map(escape).join(',');
+    });
+
+    const csv = '﻿' + [headers.join(','), ...rows].join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="inscripciones${fairId ? '-' + fairId.slice(0,8) : ''}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/inscriptions/:id — soft cancel
 router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
   try {
-    const inscription = await prisma.inscription.findUnique({
-      where: { id: req.params.id }
-    });
+    const inscription = await prisma.inscription.findUnique({ where: { id: req.params.id } });
     if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
+    if (inscription.revokedAt) return res.status(400).json({ error: 'Esta inscripción ya fue cancelada' });
 
     await prisma.$transaction(async (tx) => {
-      await tx.inscription.delete({ where: { id: req.params.id } });
+      await tx.inscription.update({
+        where: { id: req.params.id },
+        data: { revokedAt: new Date(), revokedReason: 'Cancelado por administrador', status: 'Cancelado' }
+      });
       const project = await tx.project.update({
         where: { id: inscription.projectId },
         data: { remainingSlots: { increment: 1 } }
       });
       if (project.status === 'Lleno') {
-        await tx.project.update({
-          where: { id: inscription.projectId },
-          data: { status: 'Publicado' }
-        });
+        await tx.project.update({ where: { id: inscription.projectId }, data: { status: 'Publicado' } });
       }
     });
 
@@ -323,11 +382,105 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
         })
       : { _sum: { remainingSlots: 0 } };
 
-    // Alumnos inscritos en proyectos de esa feria
-    const alumnosInscritos = periodIds.length > 0
-      ? await prisma.inscription.count({
-          where: { project: { periodId: { in: periodIds } } }
+    // Alumnos inscritos activos en esta feria (excluye revocadas)
+    const alumnosInscritos = fair
+      ? await prisma.inscription.count({ where: { fairId: fair.id, revokedAt: null } })
+      : 0;
+
+    // Inscripciones y cupos por periodo
+    const porPeriodo = await Promise.all(
+      (fair?.periods ?? []).map(async (fp) => {
+        const p = fp.period;
+        const inscritos = await prisma.inscription.count({
+          where: { fairId: fair.id, periodId: p.id, revokedAt: null }
+        });
+        const agg = await prisma.project.aggregate({
+          where: { periodId: p.id, status: { in: ['Publicado', 'Lleno'] } },
+          _sum: { totalSlots: true, remainingSlots: true }
+        });
+        const total = agg._sum.totalSlots || 0;
+        const disponibles = agg._sum.remainingSlots || 0;
+        // Use fair-scoped inscription count as the authoritative "ocupados" value
+        // so a new fair always shows 0 inscribed even if old projects share the period.
+        const ocupados = inscritos;
+        return {
+          periodo: p.name,
+          inscritos,
+          disponibles,
+          ocupados,
+          total,
+          ocupacion: total > 0 ? Math.round((ocupados / total) * 100) : 0,
+        };
+      })
+    );
+
+    // Top 5 socios por inscripciones activas
+    const inscripcionesPorSocio = fair
+      ? await prisma.inscription.groupBy({
+          by: ['projectId'],
+          where: { fairId: fair.id, revokedAt: null },
+          _count: { id: true }
         })
+      : [];
+
+    const projectIds = inscripcionesPorSocio.map(r => r.projectId);
+    const projectsWithSocio = projectIds.length > 0
+      ? await prisma.project.findMany({
+          where: { id: { in: projectIds } },
+          select: { id: true, socioFormador: { select: { name: true } } }
+        })
+      : [];
+
+    const socioMap = {};
+    for (const row of inscripcionesPorSocio) {
+      const proj = projectsWithSocio.find(p => p.id === row.projectId);
+      const nombre = proj?.socioFormador?.name ?? 'Sin socio';
+      socioMap[nombre] = (socioMap[nombre] || 0) + row._count.id;
+    }
+    const topSocios = Object.entries(socioMap)
+      .map(([nombre, inscritos]) => ({ nombre, inscritos }))
+      .sort((a, b) => b.inscritos - a.inscritos)
+      .slice(0, 5);
+
+    // Top 5 proyectos más demandados (inscripciones activas)
+    const inscripcionesPorProyecto = fair
+      ? await prisma.inscription.groupBy({
+          by: ['projectId'],
+          where: { fairId: fair.id, revokedAt: null },
+          _count: { id: true },
+          orderBy: { _count: { id: 'desc' } },
+          take: 5,
+        })
+      : [];
+
+    const topProjectIds = inscripcionesPorProyecto.map(r => r.projectId);
+    const topProjectsData = topProjectIds.length > 0
+      ? await prisma.project.findMany({
+          where: { id: { in: topProjectIds } },
+          select: { id: true, title: true, totalSlots: true, remainingSlots: true },
+        })
+      : [];
+
+    const topProyectos = inscripcionesPorProyecto.map(r => {
+      const p = topProjectsData.find(p => p.id === r.projectId);
+      if (!p) return null;
+      const inscritos = r._count.id;
+      return {
+        titulo: p.title,
+        ocupados: inscritos,
+        disponibles: p.remainingSlots,
+        total: p.totalSlots,
+      };
+    }).filter(Boolean);
+
+    // Tasa de conversión: alumnos inscritos / matrículas registradas
+    const tasaConversion = matriculasTotal > 0
+      ? Math.round((alumnosInscritos / matriculasTotal) * 100)
+      : 0;
+
+    // Proyectos llenos (por periodos de esta feria)
+    const proyectosLlenos = periodIds.length > 0
+      ? await prisma.project.count({ where: { status: 'Lleno', periodId: { in: periodIds } } })
       : 0;
 
     // Todas las ferias para el selector
@@ -337,7 +490,12 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       matriculasTotal,
       alumnosInscritos,
       proyectosPublicados,
+      proyectosLlenos,
       cuposDisponibles: cuposAgg._sum.remainingSlots || 0,
+      tasaConversion,
+      porPeriodo,
+      topSocios,
+      topProyectos,
       feriaActiva: fair,
       allFairs,
     });
