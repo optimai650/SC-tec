@@ -2,27 +2,50 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { buildPayload, signPayload, verifyWithHash, getPublicKeyPem } = require('../utils/certificates');
 const prisma = new PrismaClient();
 
-// GET /api/inscriptions/me — todas las inscripciones del alumno logueado
+function withCertValid(ins) {
+  return {
+    ...ins,
+    certificateValid: ins.certificatePayload && ins.certificateSignature
+      ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+      : null,
+  };
+}
+
+// GET /api/inscriptions/me — todas las inscripciones del alumno (activas + revocadas)
 router.get('/me', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
     const inscriptions = await prisma.inscription.findMany({
       where: { alumnoId: req.user.id },
-      include: {
-        project: {
-          include: { socioFormador: true, period: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+      include: { project: { include: { socioFormador: true, period: true } } },
+      orderBy: { createdAt: 'desc' },
     });
-    res.json(inscriptions);
+    res.json(inscriptions.map(withCertValid));
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/inscriptions/redeem — canjear código
+// GET /api/inscriptions/:id/verify — verificar firma de un comprobante
+router.get('/:id/verify', requireAuth, async (req, res, next) => {
+  try {
+    const ins = await prisma.inscription.findUnique({ where: { id: req.params.id } });
+    if (!ins) return res.status(404).json({ error: 'Inscripción no encontrada' });
+    if (req.user.role !== 'superadmin' && ins.alumnoId !== req.user.id) {
+      return res.status(403).json({ error: 'Sin permisos' });
+    }
+    const valid = ins.certificatePayload && ins.certificateSignature
+      ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+      : null;
+    res.json({ valid, publicKey: getPublicKeyPem(), inscription: withCertValid(ins) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/inscriptions/redeem — canjear código y generar certificado
 router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
     const { code, firstName, lastName, phone, personalEmail, tecEmail, career, semester } = req.body;
@@ -31,40 +54,32 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    // Validar código
     const inscCode = await prisma.inscriptionCode.findUnique({ where: { code: code.toUpperCase() } });
     if (!inscCode) return res.status(400).json({ error: 'Código inválido' });
     if (inscCode.usedAt) return res.status(400).json({ error: 'Este código ya fue utilizado' });
-
-    // Validar que el código es para esta matrícula
     if (inscCode.matricula !== user.matricula) {
       return res.status(403).json({ error: 'Este código no corresponde a tu matrícula' });
     }
 
-    // Obtener el periodo del proyecto y la feria activa
     const [project, activeFair] = await Promise.all([
-      prisma.project.findUnique({ where: { id: inscCode.projectId } }),
+      prisma.project.findUnique({ where: { id: inscCode.projectId }, include: { period: true, socioFormador: true } }),
       prisma.fair.findFirst({ where: { isActive: true } }),
     ]);
     if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
 
-    // Validar que no tenga inscripción activa en el mismo periodo
-    const existingInscription = await prisma.inscription.findUnique({
-      where: { alumnoId_periodId: { alumnoId: req.user.id, periodId: project.periodId } }
+    const existingInscription = await prisma.inscription.findFirst({
+      where: { alumnoId: req.user.id, periodId: project.periodId, revokedAt: null },
     });
     if (existingInscription) {
       return res.status(400).json({ error: 'Ya tienes una inscripción activa en este periodo' });
     }
 
-    // Transacción: actualizar perfil, crear inscripción, marcar código, decrementar cupos
     const result = await prisma.$transaction(async (tx) => {
-      // Verificar cupos disponibles dentro de la transacción (evita race condition)
       const projectCheck = await tx.project.findUnique({ where: { id: inscCode.projectId } });
       if (!projectCheck || projectCheck.remainingSlots <= 0) {
         throw Object.assign(new Error('El proyecto ya no tiene cupos disponibles'), { statusCode: 400 });
       }
 
-      // Actualizar datos de perfil del alumno
       await tx.user.update({
         where: { id: req.user.id },
         data: {
@@ -75,83 +90,88 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
           tecEmail: tecEmail || undefined,
           career: career || undefined,
           semester: semester || undefined,
-        }
+        },
       });
 
-      // Crear inscripción
       const inscription = await tx.inscription.create({
         data: {
           alumnoId: req.user.id,
           projectId: inscCode.projectId,
           periodId: project.periodId,
           fairId: activeFair?.id ?? null,
-          status: 'Inscrito'
-        }
+          status: 'Inscrito',
+        },
       });
 
-      // Marcar código como usado
       await tx.inscriptionCode.update({
         where: { id: inscCode.id },
-        data: { usedAt: new Date(), usedBy: req.user.id }
+        data: { usedAt: new Date(), usedBy: req.user.id },
       });
 
-      // Decrementar cupos
       const updatedProject = await tx.project.update({
         where: { id: inscCode.projectId },
-        data: {
-          remainingSlots: { decrement: 1 }
-        }
+        data: { remainingSlots: { decrement: 1 } },
       });
-
-      // Si llega a 0, cambiar status a "Lleno"
       if (updatedProject.remainingSlots <= 0) {
-        await tx.project.update({
-          where: { id: inscCode.projectId },
-          data: { status: 'Lleno' }
-        });
+        await tx.project.update({ where: { id: inscCode.projectId }, data: { status: 'Lleno' } });
       }
 
       return inscription;
     });
 
-    const fullInscription = await prisma.inscription.findUnique({
+    // Generar certificado con datos completos del alumno actualizado
+    const alumnoActualizado = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const payloadStr = buildPayload({
+      inscriptionId: result.id,
+      alumnoMatricula: alumnoActualizado.matricula,
+      alumnoNombre: `${alumnoActualizado.firstName || ''} ${alumnoActualizado.lastName || ''}`.trim() || alumnoActualizado.matricula,
+      projectId: project.id,
+      projectTitle: project.title,
+      socioFormador: project.socioFormador.name,
+      periodo: project.period.name,
+      feria: activeFair?.name || null,
+      fairId: activeFair?.id || null,
+      createdAt: result.createdAt.toISOString(),
+    });
+    const { signature, hash, signedAt } = signPayload(payloadStr);
+
+    const finalInscription = await prisma.inscription.update({
       where: { id: result.id },
-      include: {
-        project: { include: { socioFormador: true, period: true } }
-      }
+      data: {
+        certificatePayload: payloadStr,
+        certificateSignature: signature,
+        certificateHash: hash,
+        certificateSignedAt: signedAt,
+      },
+      include: { project: { include: { socioFormador: true, period: true } } },
     });
 
-    res.json(fullInscription);
+    res.json(withCertValid(finalInscription));
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/inscriptions/:id — cancelar inscripción propia
+// DELETE /api/inscriptions/:id — soft cancel propio del alumno
 router.delete('/:id', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
-    const inscription = await prisma.inscription.findUnique({
-      where: { id: req.params.id }
-    });
+    const inscription = await prisma.inscription.findUnique({ where: { id: req.params.id } });
     if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
-    if (inscription.alumnoId !== req.user.id) return res.status(403).json({ error: 'No tienes permiso para cancelar esta inscripción' });
+    if (inscription.alumnoId !== req.user.id) return res.status(403).json({ error: 'Sin permisos' });
+    if (inscription.revokedAt) return res.status(400).json({ error: 'Esta inscripción ya fue cancelada' });
 
     await prisma.$transaction(async (tx) => {
-      // Eliminar inscripción
-      await tx.inscription.delete({ where: { id: inscription.id } });
-
-      // Incrementar cupos
-      const project = await tx.project.update({
-        where: { id: inscription.projectId },
-        data: { remainingSlots: { increment: 1 } }
+      await tx.inscription.update({
+        where: { id: inscription.id },
+        data: { revokedAt: new Date(), revokedReason: 'Cancelado por alumno', status: 'Cancelado' },
       });
 
-      // Si estaba "Lleno", volver a "Publicado"
+      const project = await tx.project.update({
+        where: { id: inscription.projectId },
+        data: { remainingSlots: { increment: 1 } },
+      });
       if (project.status === 'Lleno') {
-        await tx.project.update({
-          where: { id: inscription.projectId },
-          data: { status: 'Publicado' }
-        });
+        await tx.project.update({ where: { id: inscription.projectId }, data: { status: 'Publicado' } });
       }
     });
 

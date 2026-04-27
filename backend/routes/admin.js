@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { verifyWithHash } = require('../utils/certificates');
 const prisma = new PrismaClient();
 
 const adminOnly = [requireAuth, requireRole('superadmin')];
@@ -258,31 +259,82 @@ router.get('/inscriptions', ...adminOnly, async (req, res, next) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(inscriptions);
+    const result = inscriptions.map(ins => ({
+      ...ins,
+      certificateValid: ins.certificatePayload && ins.certificateSignature
+        ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+        : null,
+    }));
+    res.json(result);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/admin/inscriptions/:id
+// GET /api/admin/inscriptions/export?fairId=<id> — CSV con firmas
+router.get('/inscriptions/export', ...adminOnly, async (req, res, next) => {
+  try {
+    const { fairId } = req.query;
+    const where = fairId ? { fairId } : {};
+    const inscriptions = await prisma.inscription.findMany({
+      where,
+      include: {
+        alumno: { select: { matricula: true, firstName: true, lastName: true } },
+        project: { include: { period: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const headers = ['id','matricula','nombre','proyecto','periodo','status','createdAt','revokedAt','certificateSignedAt','certificateVerified','certificateHash','certificateSignature','certificatePayload'];
+    const rows = inscriptions.map(ins => {
+      const verified = ins.certificatePayload && ins.certificateSignature
+        ? verifyWithHash(ins.certificatePayload, ins.certificateSignature, ins.certificateHash)
+        : '';
+      return [
+        ins.id,
+        ins.alumno?.matricula,
+        `${ins.alumno?.firstName || ''} ${ins.alumno?.lastName || ''}`.trim(),
+        ins.project?.title,
+        ins.project?.period?.name,
+        ins.status,
+        ins.createdAt?.toISOString(),
+        ins.revokedAt?.toISOString(),
+        ins.certificateSignedAt?.toISOString(),
+        verified,
+        ins.certificateHash,
+        ins.certificateSignature,
+        ins.certificatePayload,
+      ].map(escape).join(',');
+    });
+
+    const csv = '﻿' + [headers.join(','), ...rows].join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="inscripciones${fairId ? '-' + fairId.slice(0,8) : ''}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/inscriptions/:id — soft cancel
 router.delete('/inscriptions/:id', ...adminOnly, async (req, res, next) => {
   try {
-    const inscription = await prisma.inscription.findUnique({
-      where: { id: req.params.id }
-    });
+    const inscription = await prisma.inscription.findUnique({ where: { id: req.params.id } });
     if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
+    if (inscription.revokedAt) return res.status(400).json({ error: 'Esta inscripción ya fue cancelada' });
 
     await prisma.$transaction(async (tx) => {
-      await tx.inscription.delete({ where: { id: req.params.id } });
+      await tx.inscription.update({
+        where: { id: req.params.id },
+        data: { revokedAt: new Date(), revokedReason: 'Cancelado por administrador', status: 'Cancelado' }
+      });
       const project = await tx.project.update({
         where: { id: inscription.projectId },
         data: { remainingSlots: { increment: 1 } }
       });
       if (project.status === 'Lleno') {
-        await tx.project.update({
-          where: { id: inscription.projectId },
-          data: { status: 'Publicado' }
-        });
+        await tx.project.update({ where: { id: inscription.projectId }, data: { status: 'Publicado' } });
       }
     });
 
@@ -330,9 +382,9 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
         })
       : { _sum: { remainingSlots: 0 } };
 
-    // Alumnos inscritos en esta feria
+    // Alumnos inscritos activos en esta feria (excluye revocadas)
     const alumnosInscritos = fair
-      ? await prisma.inscription.count({ where: { fairId: fair.id } })
+      ? await prisma.inscription.count({ where: { fairId: fair.id, revokedAt: null } })
       : 0;
 
     // Inscripciones y cupos por periodo
@@ -340,7 +392,7 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       (fair?.periods ?? []).map(async (fp) => {
         const p = fp.period;
         const inscritos = await prisma.inscription.count({
-          where: { fairId: fair.id, periodId: p.id }
+          where: { fairId: fair.id, periodId: p.id, revokedAt: null }
         });
         const agg = await prisma.project.aggregate({
           where: { periodId: p.id, status: { in: ['Publicado', 'Lleno'] } },
@@ -362,11 +414,11 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       })
     );
 
-    // Top 5 socios por inscripciones
+    // Top 5 socios por inscripciones activas
     const inscripcionesPorSocio = fair
       ? await prisma.inscription.groupBy({
           by: ['projectId'],
-          where: { fairId: fair.id },
+          where: { fairId: fair.id, revokedAt: null },
           _count: { id: true }
         })
       : [];
@@ -390,11 +442,11 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       .sort((a, b) => b.inscritos - a.inscritos)
       .slice(0, 5);
 
-    // Top 5 proyectos más demandados (basado en inscripciones reales)
+    // Top 5 proyectos más demandados (inscripciones activas)
     const inscripcionesPorProyecto = fair
       ? await prisma.inscription.groupBy({
           by: ['projectId'],
-          where: { fairId: fair.id },
+          where: { fairId: fair.id, revokedAt: null },
           _count: { id: true },
           orderBy: { _count: { id: 'desc' } },
           take: 5,

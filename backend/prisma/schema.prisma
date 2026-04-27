@@ -105,18 +105,24 @@ model InscriptionCode {
 }
 
 model Inscription {
-  id        String   @id @default(cuid())
-  alumno    User     @relation(fields: [alumnoId], references: [id])
-  alumnoId  String
-  project   Project  @relation(fields: [projectId], references: [id])
-  projectId String
-  period    Period   @relation(fields: [periodId], references: [id])
-  periodId  String
-  fair      Fair?    @relation(fields: [fairId], references: [id])
-  fairId    String?
-  status    String   @default("Inscrito")
-  createdAt DateTime @default(now())
-  @@unique([alumnoId, periodId])
+  id                   String    @id @default(cuid())
+  alumno               User      @relation(fields: [alumnoId], references: [id])
+  alumnoId             String
+  project              Project   @relation(fields: [projectId], references: [id])
+  projectId            String
+  period               Period    @relation(fields: [periodId], references: [id])
+  periodId             String
+  fair                 Fair?     @relation(fields: [fairId], references: [id])
+  fairId               String?
+  status               String    @default("Inscrito")
+  createdAt            DateTime  @default(now())
+  revokedAt            DateTime?
+  revokedReason        String?
+  certificatePayload   String?
+  certificateSignature String?
+  certificateHash      String?
+  certificateSignedAt  DateTime?
+  @@index([alumnoId, periodId])
 }
 
 model ActionLog {

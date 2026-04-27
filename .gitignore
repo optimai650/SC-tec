@@ -4,3 +4,8 @@ node_modules/
 dist/
 .DS_Store
 .claude
+node_modules/
+.env
+prisma/prisma/dev.db
+prisma/prisma/dev.db-journal
+.certificate-keys/

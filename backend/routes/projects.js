@@ -93,6 +93,7 @@ router.get('/my', requireAuth, requireRole('socio_admin'), async (req, res, next
         period: true,
         socioFormador: true,
         inscriptions: {
+          where: { revokedAt: null },
           include: {
             alumno: {
               select: {
@@ -211,11 +212,11 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
       return res.status(400).json({ error: 'Esta matrícula no está registrada para la feria activa' });
     }
 
-    // Validar que el alumno NO tenga inscripción activa en el mismo periodo
+    // Validar que el alumno NO tenga inscripción activa (no revocada) en el mismo periodo
     const alumnoUser = await prisma.user.findUnique({ where: { matricula } });
     if (alumnoUser) {
       const existingInscription = await prisma.inscription.findFirst({
-        where: { alumnoId: alumnoUser.id, periodId: project.periodId }
+        where: { alumnoId: alumnoUser.id, periodId: project.periodId, revokedAt: null }
       });
       if (existingInscription) {
         return res.status(400).json({ error: 'El alumno ya tiene una inscripción activa en este periodo' });

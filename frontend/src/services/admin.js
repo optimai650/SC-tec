@@ -22,6 +22,21 @@ export const deletePeriod = (id) => api.delete(`/admin/periods/${id}`).then(r =>
 // Inscripciones admin
 export const getAllInscriptions = (fairId) => api.get('/admin/inscriptions', { params: fairId ? { fairId } : {} }).then(r => r.data);
 export const deleteInscription = (id) => api.delete(`/admin/inscriptions/${id}`).then(r => r.data);
+export const exportInscriptionsCSV = async (fairId) => {
+  const params = fairId ? { fairId } : {};
+  const response = await api.get('/admin/inscriptions/export', {
+    params,
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inscripciones${fairId ? '-' + fairId.slice(0, 8) : ''}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
 
 // Socios
 export const getAllSocios = () => api.get('/socios/all').then(r => r.data);
