@@ -23,7 +23,7 @@ model User {
   createdAt       DateTime       @default(now())
   socioFormador   SocioFormador? @relation(fields: [socioFormadorId], references: [id])
   socioFormadorId String?
-  inscription     Inscription?
+  inscriptions    Inscription[]
 }
 
 model PreregisteredMatricula {
@@ -50,19 +50,21 @@ model SocioFormador {
 }
 
 model Period {
-  id          String       @id @default(cuid())
-  name        String
-  fairPeriods FairPeriod[]
-  projects    Project[]
+  id           String        @id @default(cuid())
+  name         String
+  fairPeriods  FairPeriod[]
+  projects     Project[]
+  inscriptions Inscription[]
 }
 
 model Fair {
-  id         String                   @id @default(cuid())
-  name       String
-  isActive   Boolean                  @default(false)
-  createdAt  DateTime                 @default(now())
-  periods    FairPeriod[]
-  matriculas PreregisteredMatricula[]
+  id           String                   @id @default(cuid())
+  name         String
+  isActive     Boolean                  @default(false)
+  createdAt    DateTime                 @default(now())
+  periods      FairPeriod[]
+  matriculas   PreregisteredMatricula[]
+  inscriptions Inscription[]
 }
 
 model FairPeriod {
@@ -105,11 +107,16 @@ model InscriptionCode {
 model Inscription {
   id        String   @id @default(cuid())
   alumno    User     @relation(fields: [alumnoId], references: [id])
-  alumnoId  String   @unique
+  alumnoId  String
   project   Project  @relation(fields: [projectId], references: [id])
   projectId String
+  period    Period   @relation(fields: [periodId], references: [id])
+  periodId  String
+  fair      Fair?    @relation(fields: [fairId], references: [id])
+  fairId    String?
   status    String   @default("Inscrito")
   createdAt DateTime @default(now())
+  @@unique([alumnoId, periodId])
 }
 
 model ActionLog {

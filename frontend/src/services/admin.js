@@ -20,7 +20,7 @@ export const updatePeriod = (id, data) => api.put(`/admin/periods/${id}`, data).
 export const deletePeriod = (id) => api.delete(`/admin/periods/${id}`).then(r => r.data);
 
 // Inscripciones admin
-export const getAllInscriptions = () => api.get('/admin/inscriptions').then(r => r.data);
+export const getAllInscriptions = (fairId) => api.get('/admin/inscriptions', { params: fairId ? { fairId } : {} }).then(r => r.data);
 export const deleteInscription = (id) => api.delete(`/admin/inscriptions/${id}`).then(r => r.data);
 
 // Socios

@@ -211,14 +211,14 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
       return res.status(400).json({ error: 'Esta matrícula no está registrada para la feria activa' });
     }
 
-    // Validar que el alumno NO tenga inscripción activa
+    // Validar que el alumno NO tenga inscripción activa en el mismo periodo
     const alumnoUser = await prisma.user.findUnique({ where: { matricula } });
     if (alumnoUser) {
-      const existingInscription = await prisma.inscription.findUnique({
-        where: { alumnoId: alumnoUser.id }
+      const existingInscription = await prisma.inscription.findFirst({
+        where: { alumnoId: alumnoUser.id, periodId: project.periodId }
       });
       if (existingInscription) {
-        return res.status(400).json({ error: 'El alumno ya tiene una inscripción activa' });
+        return res.status(400).json({ error: 'El alumno ya tiene una inscripción activa en este periodo' });
       }
     }
 

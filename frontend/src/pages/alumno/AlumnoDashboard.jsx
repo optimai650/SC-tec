@@ -4,27 +4,28 @@ import Navbar from '../../components/layout/Navbar';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
-import { getMyInscription, cancelMyInscription } from '../../services/inscriptions';
+import { getMyInscriptions, cancelMyInscription } from '../../services/inscriptions';
 
 export default function AlumnoDashboard() {
   const navigate = useNavigate();
-  const [inscription, setInscription] = useState(null);
+  const [inscriptions, setInscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelModal, setCancelModal] = useState(null); // inscription object to cancel
   const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
-    getMyInscription()
-      .then(setInscription)
+    getMyInscriptions()
+      .then(setInscriptions)
       .finally(() => setLoading(false));
   }, []);
 
   const handleCancel = async () => {
+    if (!cancelModal) return;
     setCancelLoading(true);
     try {
-      await cancelMyInscription();
-      setInscription(null);
-      setCancelModal(false);
+      await cancelMyInscription(cancelModal.id);
+      setInscriptions(prev => prev.filter(i => i.id !== cancelModal.id));
+      setCancelModal(null);
     } catch (err) {
       alert(err.response?.data?.error || 'Error al cancelar');
     } finally {
@@ -53,52 +54,56 @@ export default function AlumnoDashboard() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-6 mt-2">Mi Servicio Social</h1>
 
-        {inscription ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#003087] to-[#0051a8] p-6 text-white">
-              <div className="flex items-center gap-4">
-                {inscription.project?.socioFormador?.logo ? (
-                  <img src={inscription.project.socioFormador.logo} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                    {inscription.project?.socioFormador?.name?.charAt(0)}
+        {inscriptions.length > 0 ? (
+          <div className="space-y-6">
+            {inscriptions.map(inscription => (
+              <div key={inscription.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-[#003087] to-[#0051a8] p-6 text-white">
+                  <div className="flex items-center gap-4">
+                    {inscription.project?.socioFormador?.logo ? (
+                      <img src={inscription.project.socioFormador.logo} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
+                        {inscription.project?.socioFormador?.name?.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-blue-200 text-sm">Socio Formador</p>
+                      <p className="text-xl font-bold">{inscription.project?.socioFormador?.name}</p>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <p className="text-blue-200 text-sm">Socio Formador</p>
-                  <p className="text-xl font-bold">{inscription.project?.socioFormador?.name}</p>
                 </div>
-              </div>
-            </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Proyecto</p>
-                <h2 className="text-xl font-semibold text-gray-900">{inscription.project?.title}</h2>
-              </div>
-              <p className="text-gray-600">{inscription.project?.description}</p>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">Proyecto</p>
+                    <h2 className="text-xl font-semibold text-gray-900">{inscription.project?.title}</h2>
+                  </div>
+                  <p className="text-gray-600">{inscription.project?.description}</p>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Periodo</p>
-                  <p className="text-sm font-medium text-gray-900">{inscription.project?.period?.name}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Ubicación</p>
-                  <p className="text-sm font-medium text-gray-900">{inscription.project?.location}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Estado</p>
-                  <Badge variant="success">{inscription.status}</Badge>
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">Periodo</p>
+                      <p className="text-sm font-medium text-gray-900">{inscription.project?.period?.name}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">Ubicación</p>
+                      <p className="text-sm font-medium text-gray-900">{inscription.project?.location}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">Estado</p>
+                      <Badge variant="success">{inscription.status}</Badge>
+                    </div>
+                  </div>
 
-              <div className="pt-4 border-t flex gap-3">
-                <Button variant="danger" onClick={() => setCancelModal(true)}>
-                  Salir del proyecto
-                </Button>
+                  <div className="pt-4 border-t flex gap-3">
+                    <Button variant="danger" onClick={() => setCancelModal(inscription)}>
+                      Salir del proyecto
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         ) : (
           <div className="text-center py-16">
@@ -110,12 +115,12 @@ export default function AlumnoDashboard() {
       </div>
 
       {/* Modal: Confirmar cancelación */}
-      <Modal isOpen={cancelModal} onClose={() => setCancelModal(false)} title="¿Salir del proyecto?">
+      <Modal isOpen={!!cancelModal} onClose={() => setCancelModal(null)} title="¿Salir del proyecto?">
         <div className="space-y-4">
-          <p className="text-gray-600">¿Estás seguro de que deseas salir del proyecto <strong>{inscription?.project?.title}</strong>? Esta acción no se puede deshacer fácilmente.</p>
+          <p className="text-gray-600">¿Estás seguro de que deseas salir del proyecto <strong>{cancelModal?.project?.title}</strong>? Esta acción no se puede deshacer fácilmente.</p>
           <div className="flex gap-3">
             <Button variant="danger" loading={cancelLoading} onClick={handleCancel}>Sí, salir del proyecto</Button>
-            <Button variant="secondary" onClick={() => setCancelModal(false)}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => setCancelModal(null)}>Cancelar</Button>
           </div>
         </div>
       </Modal>

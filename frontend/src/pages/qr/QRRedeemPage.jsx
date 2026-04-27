@@ -144,8 +144,8 @@ export default function QRRedeemPage() {
       const msg = err.response?.data?.error || 'Código inválido';
       if (msg.includes('cupos') || msg.includes('lleno')) {
         setStep('full');
-      } else if (msg.includes('ya tiene una inscripción') || msg.includes('Ya tienes')) {
-        setFormErrors(prev => ({ ...prev, code: 'Ya estás inscrito en un proyecto. Ve a tu dashboard para verlo.' }));
+      } else if (msg.includes('Ya tienes una inscripción activa en este periodo')) {
+        setFormErrors(prev => ({ ...prev, code: 'Ya estás inscrito en un proyecto para este periodo. Ve a tu dashboard para verlo.' }));
       } else {
         setFormErrors(prev => ({ ...prev, code: msg }));
       }

@@ -21,7 +21,7 @@ export default function AdminInscriptions() {
 
   const load = async () => {
     setLoading(true);
-    const [insc, s, p, fs] = await Promise.all([getAllInscriptions(), getAllSocios(), getPeriods(), getFairs()]);
+    const [insc, s, p, fs] = await Promise.all([getAllInscriptions(filterFair), getAllSocios(), getPeriods(), getFairs()]);
     setInscriptions(insc);
     setSocios(s);
     setPeriods(p);
@@ -29,7 +29,7 @@ export default function AdminInscriptions() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [filterFair]);
 
   const handleCancel = async (id) => {
     if (!confirm('¿Cancelar esta inscripción?')) return;
@@ -41,12 +41,8 @@ export default function AdminInscriptions() {
     }
   };
 
+  // Fair filtering is handled server-side; remaining filters are applied client-side.
   const filtered = inscriptions.filter(i => {
-    if (filterFair) {
-      const fair = fairs.find(f => f.id === filterFair);
-      const periodIds = fair ? fair.periods.map(fp => fp.periodId) : [];
-      if (!periodIds.includes(i.project?.periodId)) return false;
-    }
     if (filterSocio && i.project?.socioFormadorId !== filterSocio) return false;
     if (filterPeriod && i.project?.periodId !== filterPeriod) return false;
     if (filterStatus && i.status !== filterStatus) return false;

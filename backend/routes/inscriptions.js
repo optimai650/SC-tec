@@ -4,18 +4,19 @@ const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const prisma = new PrismaClient();
 
-// GET /api/inscriptions/me — inscripción del alumno logueado
+// GET /api/inscriptions/me — todas las inscripciones del alumno logueado
 router.get('/me', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
-    const inscription = await prisma.inscription.findUnique({
+    const inscriptions = await prisma.inscription.findMany({
       where: { alumnoId: req.user.id },
       include: {
         project: {
           include: { socioFormador: true, period: true }
         }
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     });
-    res.json(inscription || null);
+    res.json(inscriptions);
   } catch (err) {
     next(err);
   }
@@ -40,12 +41,19 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       return res.status(403).json({ error: 'Este código no corresponde a tu matrícula' });
     }
 
-    // Validar que no tenga inscripción activa
+    // Obtener el periodo del proyecto y la feria activa
+    const [project, activeFair] = await Promise.all([
+      prisma.project.findUnique({ where: { id: inscCode.projectId } }),
+      prisma.fair.findFirst({ where: { isActive: true } }),
+    ]);
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+
+    // Validar que no tenga inscripción activa en el mismo periodo
     const existingInscription = await prisma.inscription.findUnique({
-      where: { alumnoId: req.user.id }
+      where: { alumnoId_periodId: { alumnoId: req.user.id, periodId: project.periodId } }
     });
     if (existingInscription) {
-      return res.status(400).json({ error: 'Ya tienes una inscripción activa' });
+      return res.status(400).json({ error: 'Ya tienes una inscripción activa en este periodo' });
     }
 
     // Transacción: actualizar perfil, crear inscripción, marcar código, decrementar cupos
@@ -75,6 +83,8 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
         data: {
           alumnoId: req.user.id,
           projectId: inscCode.projectId,
+          periodId: project.periodId,
+          fairId: activeFair?.id ?? null,
           status: 'Inscrito'
         }
       });
@@ -86,7 +96,7 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       });
 
       // Decrementar cupos
-      const project = await tx.project.update({
+      const updatedProject = await tx.project.update({
         where: { id: inscCode.projectId },
         data: {
           remainingSlots: { decrement: 1 }
@@ -94,7 +104,7 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
       });
 
       // Si llega a 0, cambiar status a "Lleno"
-      if (project.remainingSlots <= 0) {
+      if (updatedProject.remainingSlots <= 0) {
         await tx.project.update({
           where: { id: inscCode.projectId },
           data: { status: 'Lleno' }
@@ -117,13 +127,14 @@ router.post('/redeem', requireAuth, requireRole('alumno'), async (req, res, next
   }
 });
 
-// DELETE /api/inscriptions/me — cancelar inscripción propia
-router.delete('/me', requireAuth, requireRole('alumno'), async (req, res, next) => {
+// DELETE /api/inscriptions/:id — cancelar inscripción propia
+router.delete('/:id', requireAuth, requireRole('alumno'), async (req, res, next) => {
   try {
     const inscription = await prisma.inscription.findUnique({
-      where: { alumnoId: req.user.id }
+      where: { id: req.params.id }
     });
-    if (!inscription) return res.status(404).json({ error: 'No tienes inscripción activa' });
+    if (!inscription) return res.status(404).json({ error: 'Inscripción no encontrada' });
+    if (inscription.alumnoId !== req.user.id) return res.status(403).json({ error: 'No tienes permiso para cancelar esta inscripción' });
 
     await prisma.$transaction(async (tx) => {
       // Eliminar inscripción
