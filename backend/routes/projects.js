@@ -200,9 +200,18 @@ router.post('/:id/generate-code', requireAuth, requireRole('socio_admin'), async
     }
 
     // Obtener feria activa y validar matrícula
-    const activeFair = await prisma.fair.findFirst({ where: { isActive: true } });
+    const activeFair = await prisma.fair.findFirst({
+      where: { isActive: true },
+      include: { periods: true },
+    });
     if (!activeFair) {
       return res.status(400).json({ error: 'No hay una feria activa' });
+    }
+
+    // Validar que el periodo del proyecto pertenece a la feria activa
+    const fairPeriodIds = activeFair.periods.map(fp => fp.periodId);
+    if (!fairPeriodIds.includes(project.periodId)) {
+      return res.status(400).json({ error: 'Este proyecto no pertenece a un periodo habilitado en la feria activa' });
     }
 
     const preregistered = await prisma.preregisteredMatricula.findFirst({

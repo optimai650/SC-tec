@@ -166,7 +166,7 @@ async function main() {
       title: 'Campañas de Recolección de Alimentos',
       description: 'Organización y ejecución de campañas de recolección en centros comerciales y puntos de alta afluencia. Los voluntarios promueven la donación y gestionan los puntos de acopio.',
       location: 'Varios centros comerciales MTY',
-      totalSlots: 25, remainingSlots: 23, status: 'Publicado',
+      totalSlots: 25, remainingSlots: 25, status: 'Publicado',
       qrToken: 'f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
       socioId: 'socio-banco-alimentos', periodId: 'period-intensivo-verano',
     },
@@ -253,7 +253,7 @@ async function main() {
       title: 'Tutorías para Niñas y Niños en Acogimiento',
       description: 'Apoyo escolar, lectura guiada y actividades educativas para niños y jóvenes bajo cuidado alternativo de la organización. Miércoles y viernes 3-6pm.',
       location: 'Aldeas Infantiles SOS, Monterrey',
-      totalSlots: 20, remainingSlots: 20, status: 'Publicado',
+      totalSlots: 20, remainingSlots: 18, status: 'Publicado',
       qrToken: 'c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0',
       socioId: 'socio-aldeas', periodId: 'period-feb-jun',
     },
@@ -262,7 +262,7 @@ async function main() {
       title: 'Campamento de Verano Aldeas',
       description: 'Actividades deportivas, artísticas y de desarrollo personal durante el verano para niños en acogimiento. Los voluntarios diseñan y facilitan talleres creativos.',
       location: 'Aldeas Infantiles SOS, Monterrey',
-      totalSlots: 15, remainingSlots: 13, status: 'Publicado',
+      totalSlots: 15, remainingSlots: 15, status: 'Publicado',
       qrToken: 'd6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
       socioId: 'socio-aldeas', periodId: 'period-intensivo-verano',
     },
@@ -322,7 +322,7 @@ async function main() {
       title: 'Campaña Ropa de Invierno',
       description: 'Recolección y distribución emergente de ropa de invierno para personas sin hogar y familias afectadas por frío extremo en la ZMM.',
       location: 'Centro MTY y zona norte',
-      totalSlots: 25, remainingSlots: 25, status: 'Publicado',
+      totalSlots: 25, remainingSlots: 23, status: 'Publicado',
       qrToken: 'd2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7',
       socioId: 'socio-banco-ropa', periodId: 'period-intensivo-invierno',
     },
@@ -544,9 +544,9 @@ async function main() {
     { m: 'A01234570', projectId: 'proj-clasificacion' },
     { m: 'A01234571', projectId: 'proj-clasificacion' },
     { m: 'A01234572', projectId: 'proj-clasificacion' },
-    // Campaña Recolección → 2 (total=25, remaining=23)
-    { m: 'A01234573', projectId: 'proj-campana-recoleccion' },
-    { m: 'A01234574', projectId: 'proj-campana-recoleccion' },
+    // Tutorías Aldeas → 2 (total=20, remaining=18)  [period-feb-jun ✓ feria-1]
+    { m: 'A01234573', projectId: 'proj-aldeas-educacion' },
+    { m: 'A01234574', projectId: 'proj-aldeas-educacion' },
     // TECHO Construcción → 3 (total=40, remaining=37)
     { m: 'A01234575', projectId: 'proj-techo-construccion' },
     { m: 'A01234576', projectId: 'proj-techo-construccion' },
@@ -568,9 +568,9 @@ async function main() {
     // Reforestación → 2 (total=30, remaining=28)
     { m: 'A01234587', projectId: 'proj-ambiental-reforestacion' },
     { m: 'A01234588', projectId: 'proj-ambiental-reforestacion' },
-    // Aldeas Recreación → 2 (total=15, remaining=13)
-    { m: 'A01234589', projectId: 'proj-aldeas-recreacion' },
-    { m: 'A01234590', projectId: 'proj-aldeas-recreacion' },
+    // Banco de Ropa Invierno → 2 (total=25, remaining=23)  [period-intensivo-invierno ✓ feria-1]
+    { m: 'A01234589', projectId: 'proj-ropa-campana' },
+    { m: 'A01234590', projectId: 'proj-ropa-campana' },
     // TECHO Diagnóstico → 2 (total=30, remaining=28)
     { m: 'A01234591', projectId: 'proj-techo-diagnostico' },
     { m: 'A01234592', projectId: 'proj-techo-diagnostico' },
@@ -644,7 +644,7 @@ async function main() {
     { code: 'QR-AMBIENT-002',  projectId: 'proj-ambiental-reforestacion', matricula: 'A01234588', usedAt: null, usedBy: null },
     { code: 'QR-PC-001',       projectId: 'proj-pc-simulacro',         matricula: 'A01234578', usedAt: null, usedBy: null },
     { code: 'QR-PC-002',       projectId: 'proj-pc-simulacro',         matricula: 'A01234579', usedAt: null, usedBy: null },
-    { code: 'QR-ALDEAS-001',   projectId: 'proj-aldeas-recreacion',    matricula: 'A01234589', usedAt: null, usedBy: null },
+    { code: 'QR-ALDEAS-001',   projectId: 'proj-ropa-campana',         matricula: 'A01234589', usedAt: null, usedBy: null },
     { code: 'QR-CIJ-001',      projectId: 'proj-cij-prevencion',       matricula: 'A01234593', usedAt: null, usedBy: null },
   ];
 

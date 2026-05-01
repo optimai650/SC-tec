@@ -382,9 +382,9 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
         })
       : { _sum: { remainingSlots: 0 } };
 
-    // Alumnos inscritos activos en esta feria (excluye revocadas)
-    const alumnosInscritos = fair
-      ? await prisma.inscription.count({ where: { fairId: fair.id, revokedAt: null } })
+    // Alumnos inscritos activos en esta feria (solo en periodos de esta feria, excluye revocadas)
+    const alumnosInscritos = fair && periodIds.length > 0
+      ? await prisma.inscription.count({ where: { fairId: fair.id, periodId: { in: periodIds }, revokedAt: null } })
       : 0;
 
     // Inscripciones y cupos por periodo
@@ -414,11 +414,11 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       })
     );
 
-    // Top 5 socios por inscripciones activas
-    const inscripcionesPorSocio = fair
+    // Top 5 socios por inscripciones activas (solo periodos de esta feria)
+    const inscripcionesPorSocio = fair && periodIds.length > 0
       ? await prisma.inscription.groupBy({
           by: ['projectId'],
-          where: { fairId: fair.id, revokedAt: null },
+          where: { fairId: fair.id, periodId: { in: periodIds }, revokedAt: null },
           _count: { id: true }
         })
       : [];
@@ -442,11 +442,11 @@ router.get('/stats', ...adminOnly, async (req, res, next) => {
       .sort((a, b) => b.inscritos - a.inscritos)
       .slice(0, 5);
 
-    // Top 5 proyectos más demandados (inscripciones activas)
-    const inscripcionesPorProyecto = fair
+    // Top 5 proyectos más demandados (inscripciones activas, solo periodos de esta feria)
+    const inscripcionesPorProyecto = fair && periodIds.length > 0
       ? await prisma.inscription.groupBy({
           by: ['projectId'],
-          where: { fairId: fair.id, revokedAt: null },
+          where: { fairId: fair.id, periodId: { in: periodIds }, revokedAt: null },
           _count: { id: true },
           orderBy: { _count: { id: 'desc' } },
           take: 5,
